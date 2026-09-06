@@ -1,6 +1,6 @@
 import { THREE, Batch } from "./scene-utils.js";
 
-// Shared scene assembly. IslandScenery supplies each regional art layer.
+// Shared scene assembly. Region builders are collected by IslandScenery.buildAll.
 export class Scenery {
   constructor(scene, world) {
     this.scene = scene;
@@ -10,12 +10,7 @@ export class Scenery {
     this.batch = new Batch(this.group);
     this.detail = new THREE.Group();
     this.group.add(this.detail);
-    this.buildTerrain();
-    this.buildRoads();
-    this.buildTown();
-    this.buildTrees();
-    this.buildLandmarks();
-    this.buildCoastalDetails();
+    this.buildAll();
     this.batch.finish();
   }
 }
