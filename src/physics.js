@@ -24,6 +24,20 @@ export class Car {
         0;
     this.boost = this.offroad = this.rescued = this.braking = false;
     this.previous = { x: p.x, z: p.z };
+    const fx = Math.sin(this.yaw),
+      fz = -Math.cos(this.yaw),
+      rx = Math.cos(this.yaw),
+      rz = Math.sin(this.yaw);
+    this.pitch = Math.atan2(
+      this.world.height(p.x + fx * 1.34, p.z + fz * 1.34) -
+        this.world.height(p.x - fx * 1.34, p.z - fz * 1.34),
+      2.68,
+    );
+    this.roll = Math.atan2(
+      this.world.height(p.x + rx, p.z + rz) -
+        this.world.height(p.x - rx, p.z - rz),
+      2,
+    );
   }
   step(dt, input = {}) {
     this.previous = { x: this.x, z: this.z };

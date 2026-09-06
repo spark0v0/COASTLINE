@@ -15,12 +15,12 @@ export class VehicleView {
     this.root.add(this.chassis);
     this.wheels = [];
     const paint = new THREE.MeshPhysicalMaterial({
-      color: "#f06743",
-      metalness: 0.35,
-      roughness: 0.29,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.19,
-      envMapIntensity: 0.8,
+      color: "#d95534",
+      metalness: 0.52,
+      roughness: 0.23,
+      clearcoat: 1,
+      clearcoatRoughness: 0.12,
+      envMapIntensity: 1.25,
     });
     const dark = new THREE.MeshStandardMaterial({
       color: "#192f37",
@@ -46,6 +46,20 @@ export class VehicleView {
     const body = this.chassis,
       box = (x, y, z, w, h, d, mat = paint, rot = [0, 0, 0]) =>
         mesh(new THREE.BoxGeometry(w, h, d), mat, body, [x, y, z], rot);
+    // Curved fender lips, shut lines and brake hardware improve the close driving view.
+    for (const side of [-1, 1]) {
+      for (const zz of [-1.37, 1.37]) {
+        mesh(
+          new THREE.TorusGeometry(0.405, 0.045, 8, 28, Math.PI),
+          paint,
+          body,
+          [side * 1.035, 0.37, zz],
+          [0, (side * Math.PI) / 2, 0],
+        );
+      }
+      box(side * 1.012, 0.59, -0.02, 0.017, 0.018, 1.6, dark);
+      box(side * 1.012, 0.74, 0.48, 0.022, 0.055, 0.21, alloy);
+    }
     const sections = [
       [-2.29, 0.86, 0.63],
       [-1.88, 0.97, 0.76],
@@ -184,6 +198,14 @@ export class VehicleView {
         const rimGeo = new THREE.CylinderGeometry(0.266, 0.266, 0.266, 24, 1);
         rimGeo.rotateZ(Math.PI / 2);
         mesh(rimGeo, dark, wheel);
+        const disc = new THREE.CylinderGeometry(0.205, 0.205, 0.018, 24);
+        disc.rotateZ(Math.PI / 2);
+        mesh(disc, alloy, wheel, [x > 0 ? 0.1 : -0.1, 0, 0]);
+        mesh(new THREE.BoxGeometry(0.06, 0.19, 0.1), paint, steer, [
+          x > 0 ? 0.12 : -0.12,
+          0.06,
+          0.19,
+        ]);
         const side = x > 0 ? 1 : -1;
         mesh(
           new THREE.TorusGeometry(0.254, 0.019, 6, 24),

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { Scenery } from "./scenery.js";
+import { IslandScenery as Scenery } from "./island-scene.js";
 import { VehicleView } from "./vehicle.js";
 import { damp, clamp } from "./math.js";
 
@@ -19,16 +19,16 @@ export class GameRenderer {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.02;
+    this.renderer.toneMappingExposure = 0.94;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2("#b7d4d2", 0.00165);
-    this.camera = new THREE.PerspectiveCamera(57, 1, 0.18, 2300);
+    this.scene.fog = new THREE.FogExp2("#b9d3d2", 0.00072);
+    this.camera = new THREE.PerspectiveCamera(57, 1, 0.18, 8000);
     this.camera.position.set(world.spawn.x + 12, 8, world.spawn.z - 12);
     this.look = new THREE.Vector3(world.spawn.x, 3, world.spawn.z);
-    this.scene.add(new THREE.HemisphereLight("#d6eeff", "#7f9478", 1.05));
-    this.sun = new THREE.DirectionalLight("#fff3dc", 2.65);
+    this.scene.add(new THREE.HemisphereLight("#d6eeff", "#91805c", 1.15));
+    this.sun = new THREE.DirectionalLight("#fff0d4", 2.9);
     this.sun.position.set(-90, 140, 65);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
@@ -48,11 +48,11 @@ export class GameRenderer {
       room = new RoomEnvironment();
     this.environment = pmrem.fromScene(room, 0.015);
     this.scene.environment = this.environment.texture;
-    this.scene.environmentIntensity = 0.24;
+    this.scene.environmentIntensity = 0.38;
     room.dispose();
     pmrem.dispose();
     const sky = new THREE.Mesh(
-      new THREE.SphereGeometry(1800, 32, 16),
+      new THREE.SphereGeometry(6500, 32, 16),
       new THREE.ShaderMaterial({
         side: THREE.BackSide,
         depthWrite: false,
@@ -135,7 +135,7 @@ export class GameRenderer {
     this.sun.shadow.mapSize.set(low ? 1024 : 2048, low ? 1024 : 2048);
     this.sun.shadow.map?.dispose();
     this.sun.shadow.map = null;
-    this.scene.fog.density = low ? 0.0028 : 0.00165;
+    this.scene.fog.density = low ? 0.0015 : 0.00072;
     this.scenery.setQuality(low);
     this.resize();
   }
@@ -151,12 +151,16 @@ export class GameRenderer {
       for (const o of this.world.grid.get(
         Math.floor(x / 24) + "," + Math.floor(z / 24),
       ) || []) {
+        const c = Math.cos(o.yaw || 0),
+          s = Math.sin(o.yaw || 0);
+        const localX = (x - o.x) * c + (z - o.z) * s,
+          localZ = -(x - o.x) * s + (z - o.z) * c;
         if (
           o.type === "box" &&
           o.w > 5 &&
           y < this.world.height(o.x, o.z) + o.h + 0.6 &&
-          Math.abs(x - o.x) < o.w / 2 + 0.65 &&
-          Math.abs(z - o.z) < o.d / 2 + 0.65
+          Math.abs(localX) < o.w / 2 + 0.65 &&
+          Math.abs(localZ) < o.d / 2 + 0.65
         )
           return target.clone().addScaledVector(delta, Math.max(0.18, t - 0.1));
       }
@@ -211,7 +215,7 @@ export class GameRenderer {
     this.sun.position.set(sx - 80, car.y + 101, sz + 60);
     this.sky.position.copy(this.camera.position);
     this.vehicle.update(car, time);
-    this.scenery.update(time);
+    this.scenery.update(time, car);
     this.gates.visible = race.state === "running" || race.state === "countdown";
     if (this.gates.visible) {
       const p = race.points[race.index];

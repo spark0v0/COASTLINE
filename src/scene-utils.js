@@ -38,9 +38,9 @@ export class Batch {
     this.materials = new Map();
     this.geometries = {
       box: new THREE.BoxGeometry(1, 1, 1),
-      cylinder: new THREE.CylinderGeometry(1, 1, 1, 8),
+      cylinder: new THREE.CylinderGeometry(0.83, 1, 1, 12),
       cone: new THREE.ConeGeometry(1, 1, 8),
-      sphere: new THREE.IcosahedronGeometry(1, 1),
+      sphere: new THREE.IcosahedronGeometry(1, 2),
       plane: new THREE.PlaneGeometry(1, 1),
     };
     this.object = new THREE.Object3D();
@@ -56,13 +56,26 @@ export class Batch {
   }
   add(kind, color, pos, size, rotation = [0, 0, 0], shadow = true) {
     const mat = typeof color === "string" ? this.material(color) : color,
-      key = kind + ":" + mat.uuid + ":" + shadow;
+      key =
+        kind +
+        ":" +
+        mat.uuid +
+        ":" +
+        shadow +
+        ":" +
+        Math.floor(pos[0] / 180) +
+        ":" +
+        Math.floor(pos[2] / 180);
     if (!this.buckets.has(key))
       this.buckets.set(key, {
         geo: this.geometries[kind],
         mat,
         matrices: [],
         shadow,
+        center: {
+          x: (Math.floor(pos[0] / 180) + 0.5) * 180,
+          z: (Math.floor(pos[2] / 180) + 0.5) * 180,
+        },
       });
     this.object.position.set(...pos);
     this.object.scale.set(...size);
@@ -81,10 +94,24 @@ export class Batch {
       m.receiveShadow = true;
       m.computeBoundingSphere();
       m.userData.optionalDetail = !b.shadow && b.geo === this.geometries.box;
+      m.userData.center = b.center;
       this.parent.add(m);
       this.meshes.push(m);
     }
     this.buckets.clear();
+  }
+  updateVisibility(x, z, low) {
+    const limit = low ? 520 : 1000;
+    for (const m of this.meshes) {
+      const p = m.userData.center;
+      m.visible =
+        Math.hypot(p.x - x, p.z - z) < limit &&
+        !(
+          low &&
+          m.userData.optionalDetail &&
+          Math.hypot(p.x - x, p.z - z) > 170
+        );
+    }
   }
 }
 export function textTexture(

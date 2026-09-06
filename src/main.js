@@ -12,6 +12,8 @@ class Game {
     this.world = new WorldData();
     this.car = new Car(this.world);
     this.race = new Race(this.world.checkpoints);
+    this.selectedEvent = this.world.events[0];
+    this.discovered = new Set();
     this.view = new GameRenderer($("game"), this.world);
     this.audio = new AudioEngine();
     this.effects = new Effects(this.view.scene, this.world);
@@ -37,7 +39,7 @@ class Game {
     this.steps = 0;
     this.draws = 0;
     this.onUpdate = null;
-    this.settings = { quality: "standard", sound: true };
+    this.settings = { quality: "standard", sound: true, volume: 0.7 };
     try {
       const settings = JSON.parse(
         localStorage.getItem("coastline.preferences") || "null",
@@ -45,15 +47,28 @@ class Game {
       if (settings) {
         this.settings.quality = settings.quality === "low" ? "low" : "standard";
         this.settings.sound = settings.sound !== false;
+        this.settings.volume = Number.isFinite(settings.volume)
+          ? Math.max(0, Math.min(1, settings.volume))
+          : 0.7;
       }
-      const best = Number(localStorage.getItem("coastline.best.v2"));
+      const best = Number(
+        localStorage.getItem("coastline.best.v3." + this.selectedEvent.id),
+      );
       if (Number.isFinite(best) && best > 0) this.best = best;
+      this.discovered = new Set(
+        JSON.parse(localStorage.getItem("coastline.discoveries.v3") || "[]"),
+      );
     } catch {}
     this.audio.enabled = this.settings.sound;
+    this.audio.volume = this.settings.volume;
     this.view.setQuality(this.settings.quality);
     this.effects.low = this.settings.quality === "low";
     $("quality-select").value = this.settings.quality;
     $("sound-toggle").checked = this.settings.sound;
+    $("volume-slider").value = Math.round(this.settings.volume * 100);
+    $("island-size").textContent =
+      (this.world.routeLength / 1000).toFixed(1) + " km 环岛公路";
+    this.createEvents();
     this.makeMinimap();
     this.bind();
     this.updateMode();
@@ -88,6 +103,7 @@ class Game {
     $("welcome-panel").hidden = next !== "welcome" && next !== "help";
     $("pause-panel").hidden = next !== "pause";
     $("result-panel").hidden = next !== "result";
+    $("event-panel").hidden = next !== "events";
     $("hud").inert = next !== "play";
     $("settings-button").disabled = next !== "play";
     document.body.classList.toggle(
@@ -105,7 +121,9 @@ class Game {
           ? $("resume-button")
           : next === "result"
             ? $("retry-button")
-            : $("play-button");
+            : next === "events"
+              ? $("event-list").querySelector("button")
+              : $("play-button");
       first.focus({ preventScroll: true });
     }
     this.last = performance.now();
@@ -120,7 +138,9 @@ class Game {
     this.toast("自由驾驶 · 前方是晴湾海岸，沿路可前往城市和山道");
   }
   startRace() {
-    this.car.reset(this.world.start);
+    this.race.points = this.selectedEvent.points;
+    this.loadBest();
+    this.car.reset(this.selectedEvent.start);
     this.car.nitro = 100;
     this.car.nitroLocked = false;
     this.race.start();
@@ -130,7 +150,60 @@ class Game {
     this.effects.reset();
     this.updateMode();
     this.panel("play");
-    this.toast("环岛计时赛 · 1.74 km · 按顺序通过 16 个检查点");
+    this.toast(
+      this.selectedEvent.name +
+        " · " +
+        (this.selectedEvent.length / 1000).toFixed(1) +
+        " km · " +
+        this.race.points.length +
+        " 个检查点",
+    );
+  }
+  loadBest() {
+    this.best = null;
+    try {
+      const v = Number(
+        localStorage.getItem("coastline.best.v3." + this.selectedEvent.id),
+      );
+      if (v > 0 && Number.isFinite(v)) this.best = v;
+    } catch {}
+  }
+  createEvents() {
+    const list = $("event-list");
+    list.replaceChildren();
+    for (const event of this.world.events) {
+      const button = document.createElement("button");
+      button.className = "event-card";
+      let best = null;
+      try {
+        best = Number(localStorage.getItem("coastline.best.v3." + event.id));
+      } catch {}
+      button.innerHTML =
+        '<span class="event-number">' +
+        String(this.world.events.indexOf(event) + 1).padStart(2, "0") +
+        "</span><span><strong>" +
+        event.name +
+        "</strong><small>" +
+        event.subtitle +
+        "</small><em>" +
+        (event.length / 1000).toFixed(1) +
+        " km · " +
+        event.count +
+        " 检查点 · 最佳 " +
+        (best > 0 ? formatTime(best) : "等待挑战") +
+        "</em></span><b>↗</b>";
+      button.onclick = () => {
+        this.selectedEvent = event;
+        this.scriptedDriver = null;
+        this.startRace();
+      };
+      list.append(button);
+    }
+  }
+  chooseEvent() {
+    this.createEvents();
+    this.eventReturn = this.mode;
+    this.panel("events");
   }
   finish() {
     const r = this.race,
@@ -138,16 +211,21 @@ class Game {
     if (record) {
       this.best = r.elapsed;
       try {
-        localStorage.setItem("coastline.best.v2", String(this.best));
+        localStorage.setItem(
+          "coastline.best.v3." + this.selectedEvent.id,
+          String(this.best),
+        );
       } catch {}
     }
     $("result-time").textContent = formatTime(r.elapsed);
     $("best-time").textContent = formatTime(this.best);
     $("result-speed").textContent = Math.round(this.raceTopSpeed) + " km/h";
     $("result-penalty").textContent = "+" + r.penalty + " 秒";
+    $("result-route").textContent =
+      this.selectedEvent.name + " · 所有检查点已通过";
     $("record-label").textContent = record
       ? "新个人纪录 · 把这一圈留给海风。"
-      : "完整环岛，挑战完成。下一圈，还能更快。";
+      : "挑战完成。再次出发，刷新自己的纪录。";
     this.panel("result");
     this.scriptedDriver = null;
   }
@@ -156,8 +234,8 @@ class Game {
     const p = this.activeRace()
       ? this.world.pointAt(
           this.race.index === 0
-            ? 0
-            : this.world.checkpoints[this.race.index - 1].s,
+            ? this.selectedEvent.start.s
+            : this.race.points[this.race.index - 1].s,
         )
       : this.world.safeReset(this.car);
     this.race.resetPenalty();
@@ -187,7 +265,7 @@ class Game {
   }
   updateMode() {
     const racing = this.activeRace();
-    $("mode-label").textContent = racing ? "环岛计时赛" : "自由驾驶";
+    $("mode-label").textContent = racing ? this.selectedEvent.name : "海岛漫游";
     $("race-button").hidden = racing;
     $("race-stats").hidden = !racing;
     $("checkpoint-hint").hidden = !racing;
@@ -207,8 +285,11 @@ class Game {
     $("fullscreen-button").onclick = toggleFullscreen;
     $("play-button").onclick = () =>
       this.mode === "help" ? this.panel("pause") : this.freeDrive();
-    $("welcome-race").onclick = () => this.startRace();
-    $("race-button").onclick = () => this.startRace();
+    $("welcome-race").onclick = () => this.chooseEvent();
+    $("race-button").onclick = () => this.chooseEvent();
+    $("event-close").onclick = () =>
+      this.panel(this.eventReturn === "welcome" ? "welcome" : "play");
+    $("choose-race-button").onclick = () => this.chooseEvent();
     $("resume-button").onclick = () => this.panel("play");
     $("settings-button").onclick = () => this.panel("pause");
     $("restart-button").onclick = () => {
@@ -226,6 +307,13 @@ class Game {
       this.panel("help");
     };
     $("quality-select").onchange = (e) => this.setQuality(e.target.value);
+    $("volume-slider").oninput = (e) => {
+      this.settings.volume = Number(e.target.value) / 100;
+      this.audio.volume = this.settings.volume;
+      if (this.audio.master)
+        this.audio.master.gain.value = 0.24 * this.audio.volume;
+      this.saveSettings();
+    };
     $("sound-toggle").onchange = (e) => {
       this.settings.sound = e.target.checked;
       this.audio.enabled = e.target.checked;
@@ -257,6 +345,8 @@ class Game {
         if (this.mode === "play") this.panel("pause");
         else if (this.mode === "pause") this.panel("play");
         else if (this.mode === "help") this.panel("pause");
+        else if (this.mode === "events")
+          this.panel(this.eventReturn === "welcome" ? "welcome" : "play");
         return;
       }
       if (e.code === "Tab" && this.mode !== "play") {
@@ -348,14 +438,27 @@ class Game {
     }
     ctx.font = '9px "Microsoft YaHei", sans-serif';
     ctx.fillStyle = "#cedec1";
-    ctx.fillText("松岭", 48, 26);
-    ctx.fillText("棕榈港", 94, 147);
-    ctx.fillText("晴湾", 209, 109);
+    for (const region of this.world.regions) {
+      const q = this.mapPoint(region.x, region.z);
+      ctx.fillText(
+        region.name.replace("老城", "").replace("山道", "").replace("海岸", ""),
+        q.x - 15,
+        q.y - 6,
+      );
+    }
   }
   mapPoint(x, z) {
     return {
-      x: 16 + ((x + 350) / 620) * (this.map.width - 32),
-      y: 9 + ((z + 366) / 732) * (this.map.height - 18),
+      x:
+        12 +
+        ((x - this.world.bounds.minX) /
+          (this.world.bounds.maxX - this.world.bounds.minX)) *
+          (this.map.width - 24),
+      y:
+        9 +
+        ((z - this.world.bounds.minZ) /
+          (this.world.bounds.maxZ - this.world.bounds.minZ)) *
+          (this.map.height - 18),
     };
   }
   drawMap() {
@@ -363,14 +466,14 @@ class Game {
     ctx.drawImage(this.mapBase, 0, 0);
     if (this.activeRace()) {
       ctx.beginPath();
-      this.world.route.forEach((p, i) => {
+      this.selectedEvent.route.forEach((p, i) => {
         const q = this.mapPoint(p.x, p.z);
         i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y);
       });
       ctx.lineWidth = 1.7;
       ctx.strokeStyle = "#7de6cf";
       ctx.stroke();
-      this.world.checkpoints.forEach((p, i) => {
+      this.race.points.forEach((p, i) => {
         const q = this.mapPoint(p.x, p.z);
         ctx.beginPath();
         ctx.arc(q.x, q.y, i === this.race.index ? 4 : 1.7, 0, Math.PI * 2);
@@ -383,6 +486,14 @@ class Game {
         ctx.fill();
       });
     }
+    if (!this.activeRace())
+      for (const d of this.world.discoveries) {
+        const q = this.mapPoint(d.x, d.z);
+        ctx.fillStyle = this.discovered.has(d.id) ? "#e7ecb1" : "#c3d7d0";
+        ctx.beginPath();
+        ctx.arc(q.x, q.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
     const p = this.mapPoint(this.car.x, this.car.z);
     ctx.save();
     ctx.translate(p.x, p.y);
@@ -420,6 +531,33 @@ class Game {
     const region = this.world.region(car.x, car.z);
     $("region-label").textContent = region;
     $("map-location").textContent = region;
+    $("discovery-count").textContent =
+      this.discovered.size + " / " + this.world.discoveries.length + " 风景";
+    if (this.mode === "play" && !this.activeRace()) {
+      for (const d of this.world.discoveries)
+        if (!this.discovered.has(d.id) && distance(car, d) < 48) {
+          this.discovered.add(d.id);
+          this.toast("发现 " + d.name + " · " + d.description);
+          this.audio.beep(990, 0.18);
+          try {
+            localStorage.setItem(
+              "coastline.discoveries.v3",
+              JSON.stringify([...this.discovered]),
+            );
+          } catch {}
+          break;
+        }
+      const unseen = this.world.discoveries
+        .filter((d) => !this.discovered.has(d.id))
+        .sort((a, b) => distance(car, a) - distance(car, b))[0];
+      $("objective").textContent = unseen
+        ? "下一处风景：" +
+          unseen.name +
+          " · " +
+          (distance(car, unseen) / 1000).toFixed(1) +
+          " km"
+        : "五处风景已收集。挑选一场比赛，留下你的最佳纪录。";
+    }
     $("surface-label").textContent = car.offroad
       ? "草地 · 抓地降低"
       : "柏油路面";
@@ -488,8 +626,8 @@ class Game {
           car.reset(
             this.world.pointAt(
               this.race.index === 0
-                ? 0
-                : this.world.checkpoints[this.race.index - 1].s,
+                ? this.selectedEvent.start.s
+                : this.race.points[this.race.index - 1].s,
             ),
           );
         }
@@ -601,9 +739,7 @@ class Game {
 }
 
 try {
-  const game = new Game();
-  if (new URLSearchParams(location.search).has("qa"))
-    import("./qa.js").then((m) => m.setupQA(game));
+  new Game();
 } catch (error) {
   console.error(error);
   $("fatal").hidden = false;

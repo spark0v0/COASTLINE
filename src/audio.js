@@ -4,6 +4,7 @@ export class AudioEngine {
     this.enabled = true;
     this.ctx = null;
     this.rpm = 45;
+    this.volume = 0.7;
   }
   async start() {
     if (!this.enabled) return;
@@ -13,7 +14,7 @@ export class AudioEngine {
         if (!Audio) return;
         const c = (this.ctx = new Audio());
         this.master = c.createGain();
-        this.master.gain.value = 0.17;
+        this.master.gain.value = 0.24 * this.volume;
         const compressor = c.createDynamicsCompressor();
         this.master.connect(compressor);
         compressor.connect(c.destination);

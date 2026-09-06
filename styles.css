@@ -1055,3 +1055,114 @@ body.in-menu .offline {
 .top-actions {
   gap: 13px;
 }
+.event-panel {
+  width: min(650px, 100%);
+  padding: 30px;
+  border-radius: 18px;
+  background: #163d43ed;
+  border: 1px solid #cde0c62b;
+  box-shadow: 0 24px 90px #102b3a60;
+}
+.event-panel h1 {
+  font-size: 34px;
+  margin: 12px 0;
+}
+.event-panel p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #c5d6d0;
+}
+#event-list {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+}
+.event-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  text-align: left;
+  padding: 20px;
+  background: #244a4ddd;
+  border: 1px solid #c6dcc531;
+  border-radius: 10px;
+}
+.event-card:hover {
+  background: #3d6260;
+  border-color: #d9e9af;
+}
+.event-card > span:nth-child(2) {
+  flex: 1;
+}
+.event-card strong,
+.event-card small,
+.event-card em {
+  display: block;
+}
+.event-card strong {
+  font-size: 20px;
+  font-weight: 500;
+}
+.event-card small {
+  font-size: 12px;
+  color: #ccdad1;
+  margin: 7px 0;
+}
+.event-card em {
+  font-size: 11px;
+  color: #dceaab;
+  font-style: normal;
+}
+.event-number {
+  font-size: 28px;
+  font-weight: 300;
+  color: #91b5ab;
+}
+.event-card > b {
+  font-size: 24px;
+  font-weight: 400;
+  color: #e5efb6;
+}
+#volume-slider {
+  width: 130px;
+  accent-color: #cdeba7;
+}
+#discovery-count {
+  font-size: 9px;
+  color: #e0eabd;
+}
+.map-bottom {
+  gap: 8px;
+}
+.drive-card {
+  background: linear-gradient(135deg, #15383cdb, #204747b8);
+  border-radius: 12px;
+}
+.map-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+.modal-wrap {
+  background: linear-gradient(
+    90deg,
+    #0b2932ef,
+    #102f37b8 32%,
+    #0d303325 60%,
+    transparent
+  );
+}
+.welcome {
+  max-width: 510px;
+}
+.modal-panel h1 {
+  font-weight: 500;
+}
+#vignette {
+  background: linear-gradient(
+    180deg,
+    #17354016,
+    transparent 22%,
+    transparent 70%,
+    #112c342b
+  );
+}

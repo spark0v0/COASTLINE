@@ -53,7 +53,7 @@
         <h2 id="region-label">棕榈港</h2>
         <p id="objective">沿着海岸线，去发现下一道弯。</p>
         <button id="race-button" class="small-button">
-          开始环岛计时赛 <span>↗</span>
+          选择公路挑战 <span>↗</span>
         </button>
         <div id="race-stats" hidden>
           <div><span>用时</span><b id="race-time">00:00.000</b></div>
@@ -79,7 +79,8 @@
         <div class="map-bottom">
           <span
             ><i class="map-dot"></i> <span id="map-location">棕榈港</span></span
-          ><span id="distance-travelled">0.0 km</span>
+          ><span id="distance-travelled">0.0 km</span
+          ><span id="discovery-count">0 / 5 风景</span>
         </div>
       </section>
       <section class="speed-card">
@@ -120,7 +121,8 @@
           穿过彩色街区，沿着海岸加速，再驶入山间弯道。<br />没有目的地也没关系，每一条路都通往新风景。
         </p>
         <div class="welcome-tags">
-          <span>3D 开放地图</span><span>自由探索</span><span>检查点计时赛</span>
+          <span id="island-size">环岛公路</span><span>五片风景</span
+          ><span>三场公路挑战</span>
         </div>
         <div class="controls-grid">
           <div><kbd>W / ↑</kbd><span>加速</span></div>
@@ -139,6 +141,20 @@
           入弯前减速，短按空格甩尾，出弯再加氮气。<br />APEX S1 · 晴湾群岛 ·
           点击出发后开启音效 · F 全屏
         </p>
+      </section>
+      <section
+        id="event-panel"
+        class="modal-panel event-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="event-title"
+        hidden
+      >
+        <div class="eyebrow">THE ISLAND IS YOURS</div>
+        <h1 id="event-title">挑一条路，出发。</h1>
+        <p>三场不同节奏的公路挑战。入弯前减速，出弯后释放氮气。</p>
+        <div id="event-list"></div>
+        <button id="event-close" class="secondary">返回漫游</button>
       </section>
       <section
         id="pause-panel"
@@ -162,6 +178,16 @@
           ><span>游戏音效<small>程序合成引擎、轮胎与氮气声</small></span
           ><input id="sound-toggle" type="checkbox" checked role="switch"
         /></label>
+        <label class="setting"
+          ><span>音量<small>引擎与驾驶反馈</small></span
+          ><input
+            id="volume-slider"
+            type="range"
+            min="0"
+            max="100"
+            value="70"
+            aria-label="音量"
+        /></label>
         <div class="pause-controls">
           <span><kbd>WASD / 方向键</kbd> 驾驶</span
           ><span><kbd>空格</kbd> 漂移</span><span><kbd>Shift</kbd> 氮气</span
@@ -174,6 +200,9 @@
           <button id="restart-button" class="secondary">重新挑战</button
           ><button id="free-button" class="secondary">自由驾驶</button>
         </div>
+        <button id="choose-race-button" class="text-button">
+          选择其他公路挑战
+        </button>
         <button id="help-button" class="text-button">查看首次操作说明</button>
       </section>
       <section
@@ -187,7 +216,7 @@
         <div class="eyebrow">COASTLINE / FINISH</div>
         <div class="finish-icon">⚑</div>
         <h1 id="result-title">漂亮地冲线。</h1>
-        <p>环岛计时赛 · 所有检查点已通过</p>
+        <p id="result-route">公路挑战 · 所有检查点已通过</p>
         <div class="result-time" id="result-time">01:30.000</div>
         <div class="result-grid">
           <div><span>个人最佳</span><b id="best-time">—</b></div>
