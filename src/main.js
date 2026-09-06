@@ -110,6 +110,11 @@ class Game {
       "in-menu",
       next === "welcome" || next === "help",
     );
+    // The welcome button doubles as the way back out of the help screen.
+    $("play-button").innerHTML =
+      next === "help"
+        ? "返回设置 <span>→</span>"
+        : "出发，自由驾驶 <span>↗</span>";
     document.body.classList.remove("boosting");
     if (next === "play") {
       this.audio.start();
@@ -148,6 +153,7 @@ class Game {
     this.countLast = -1;
     this.snap = true;
     this.effects.reset();
+    $("race-progress").textContent = "0 / " + this.race.points.length;
     this.updateMode();
     this.panel("play");
     this.toast(
@@ -302,10 +308,7 @@ class Game {
       this.startRace();
     };
     $("explore-button").onclick = () => this.freeDrive();
-    $("help-button").onclick = () => {
-      $("play-button").innerHTML = "返回设置 <span>→</span>";
-      this.panel("help");
-    };
+    $("help-button").onclick = () => this.panel("help");
     $("quality-select").onchange = (e) => this.setQuality(e.target.value);
     $("volume-slider").oninput = (e) => {
       this.settings.volume = Number(e.target.value) / 100;
@@ -318,6 +321,7 @@ class Game {
       this.settings.sound = e.target.checked;
       this.audio.enabled = e.target.checked;
       if (!e.target.checked) this.audio.suspend();
+      else if (this.mode === "play") this.audio.start();
       this.saveSettings();
     };
     const driving = [
@@ -739,7 +743,10 @@ class Game {
 }
 
 try {
-  new Game();
+  const game = new Game();
+  // Optional in-browser verification panel: append ?qa=1 to the URL.
+  if (new URLSearchParams(location.search).has("qa"))
+    import("./qa.js").then((m) => m.setupQA(game)).catch(() => {});
 } catch (error) {
   console.error(error);
   $("fatal").hidden = false;

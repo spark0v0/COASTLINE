@@ -19,6 +19,7 @@ export class Car {
       this.pitch =
       this.roll =
       this.bodyPitch =
+      this.bodyRoll =
       this.impact =
       this.wheelSpin =
         0;
@@ -151,12 +152,10 @@ export class Race {
     this.state = "countdown";
     this.index = this.elapsed = this.penalty = 0;
     this.countdown = 3;
-    this.splits = [];
   }
   cancel() {
     this.state = "idle";
     this.index = this.elapsed = this.penalty = this.countdown = 0;
-    this.splits = [];
   }
   resetPenalty() {
     if (this.state === "running") {
@@ -186,7 +185,6 @@ export class Race {
     const crossingX = previous.x + (current.x - previous.x) * fraction;
     const crossingZ = previous.z + (current.z - previous.z) * fraction;
     if (crossed && Math.hypot(crossingX - p.x, crossingZ - p.z) <= p.radius) {
-      this.splits.push(this.elapsed);
       this.index++;
       if (this.index === this.points.length) {
         this.state = "finished";

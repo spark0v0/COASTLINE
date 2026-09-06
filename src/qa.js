@@ -61,7 +61,9 @@ export function setupQA(game) {
   $("qa-collision").onclick = () => {
     name = "碰撞套件";
     report = [];
-    const b = game.world.buildings.find((b) => b.x === 112),
+    const b = game.world.buildings.reduce((m, c) =>
+        c.w * c.d > m.w * m.d ? c : m,
+      ),
       edge = b.x - b.w / 2;
     reset({ x: edge - 9, z: b.z, yaw: Math.PI / 2 });
     game.car.vx = 65;
@@ -89,7 +91,9 @@ export function setupQA(game) {
       if (phase === 1) {
         if (t > 1.6) {
           setReport(`碰撞后倒车恢复：${c.x < atWall - 2 ? "PASS" : "FAIL"}`);
-          rail = game.world.rails.find((r) => r.x > 195 && Math.abs(r.z) < 30);
+          rail =
+            game.world.rails.find((r) => r.x > 195 && Math.abs(r.z) < 30) ||
+            game.world.rails[0];
           const near = game.world.nearestRoad(rail.x, rail.z),
             nx = Math.cos(rail.yaw),
             nz = Math.sin(rail.yaw),
@@ -214,7 +218,9 @@ export function setupQA(game) {
       game.race.state === "finished" &&
       !lapReported
     ) {
-      setReport(`16/16 检查点完成：PASS · ${formatTime(game.race.elapsed)}`);
+      setReport(
+        `${game.race.points.length}/${game.race.points.length} 检查点完成：PASS · ${formatTime(game.race.elapsed)}`,
+      );
       lapReported = true;
     }
     if (game.race.state === "countdown") lapReported = false;

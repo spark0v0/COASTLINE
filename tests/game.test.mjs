@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { Car, Race } from "../src/physics.js";
 import { WorldData } from "../src/world-data.js";
 import { RoutePilot } from "../src/pilot.js";
+import { ISLAND_SCALE } from "../src/world-layout.js";
 import { distance, segmentPoint } from "../src/math.js";
 
 const flat = {
@@ -82,8 +83,11 @@ test("race countdown, sequential swept checkpoints, penalties, finish and restar
 test("connected roads stay on the island and terrain is genuinely elevated", () => {
   const w = new WorldData();
   assert(w.route.every((p) => w.inside(p.x, p.z)));
-  assert(w.height(-190, -240) > 40);
-  assert(w.routeLength > 1600 && w.routeLength < 2000);
+  assert(
+    w.height(-191 * ISLAND_SCALE, -244 * ISLAND_SCALE) > 40,
+    "松岭主峰应有真实海拔",
+  );
+  assert(w.routeLength > 5500 && w.routeLength < 6500);
   const reached = new Set([0]);
   let changed = true;
   while (changed) {
@@ -135,7 +139,7 @@ test("rotated guardrail collision does not tunnel at nitro speed", () => {
   assert(c.x * nx + c.z * nz < -2.1);
   assert(Number.isFinite(c.speed));
 });
-test("full timed lap driven through normal physics and all 16 checkpoints", () => {
+test("full timed lap driven through normal physics and all 36 checkpoints", () => {
   const w = new WorldData(),
     c = new Car(w),
     r = new Race(w.checkpoints),
@@ -145,7 +149,7 @@ test("full timed lap driven through normal physics and all 16 checkpoints", () =
   let hits = 0,
     rescues = 0,
     minimumSpeed = Infinity;
-  for (let i = 0; i < 120 * 180 && r.state !== "finished"; i++) {
+  for (let i = 0; i < 120 * 330 && r.state !== "finished"; i++) {
     if (r.state !== "countdown") {
       c.step(1 / 120, p.input(c));
       if (c.impact > 0.1) hits++;
@@ -170,7 +174,7 @@ test("full timed lap driven through normal physics and all 16 checkpoints", () =
     }),
   );
   assert.equal(r.state, "finished");
-  assert.equal(r.index, 16);
+  assert.equal(r.index, 36);
   assert.equal(rescues, 0);
   assert(c.distance > w.routeLength * 0.95);
   assert(hits < 30, "Route driver should not rely on wall impacts");
