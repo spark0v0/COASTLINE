@@ -11,6 +11,8 @@ const flat = {
   height: () => 2,
   nearestRoad: () => ({ d: 0, width: 18 }),
   collide: () => {},
+  shoreRim: () => 0,
+  scale: 3.35,
 };
 function drive(car, seconds, input) {
   for (let i = 0; i < Math.round(seconds * 120); i++)
@@ -54,6 +56,17 @@ test("grass slows the vehicle", () => {
     off = drive(new Car(grass), 5, { throttle: true });
   assert(off.speed < road.speed * 0.6);
   assert(off.offroad);
+});
+test("offroad still accelerates and nitro works on grass", () => {
+  const grass = { ...flat, nearestRoad: () => ({ d: 20, width: 18 }) },
+    base = drive(new Car(grass), 4, { throttle: true }),
+    boosted = drive(new Car(grass), 4, { throttle: true, nitro: true });
+  assert(base.speed > 20, `offroad top speed too low: ${base.speed}`);
+  assert(
+    boosted.speed > base.speed * 1.2,
+    `offroad nitro: ${boosted.speed} vs ${base.speed}`,
+  );
+  assert(boosted.nitro < 80, "boost should consume nitro offroad");
 });
 test("race countdown, sequential swept checkpoints, penalties, finish and restart", () => {
   const r = new Race([

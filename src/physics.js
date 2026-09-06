@@ -24,6 +24,7 @@ export class Car {
       this.wheelSpin =
         0;
     this.boost = this.offroad = this.rescued = this.braking = false;
+    this.sand = false;
     this.previous = { x: p.x, z: p.z };
     const fx = Math.sin(this.yaw),
       fz = -Math.cos(this.yaw),
@@ -50,7 +51,13 @@ export class Car {
     let forward = this.vx * fx + this.vz * fz,
       lateral = this.vx * rx + this.vz * rz;
     const road = this.world.nearestRoad(this.x, this.z);
-    this.offroad = road.d > road.width * 0.5 + 0.6;
+    this.offroad = road.d > road.width * 0.5 + 1.0;
+    // Sand (the beach band near the shoreline) is soft but fast; grass is slow.
+    const sand =
+      this.offroad &&
+      this.world.shoreRim(this.x / this.world.scale, this.z / this.world.scale) >
+        0.88;
+    this.sand = sand;
     const speed = Math.abs(forward),
       throttle = input.throttle ? 1 : 0,
       brake = input.brake ? 1 : 0;
@@ -60,7 +67,6 @@ export class Car {
       throttle &&
       forward > 3 &&
       this.nitro > 0 &&
-      !this.offroad &&
       !this.nitroLocked
     );
     this.nitro = clamp(
@@ -79,7 +85,7 @@ export class Car {
       (0.6 +
         0.0048 * speed * speed +
         speed * 0.025 +
-        (this.offroad ? speed * 0.68 : 0));
+        (this.offroad ? speed * (sand ? 0.16 : 0.35) : 0));
     if (input.handbrake && speed > 2) acceleration -= Math.sign(forward) * 5.5;
     if (!throttle && !brake && speed < 0.08) forward = 0;
     else forward += acceleration * dt;
@@ -104,7 +110,8 @@ export class Car {
       sz = Math.sin(this.yaw);
     forward = this.vx * nx + this.vz * nz;
     lateral = this.vx * sx + this.vz * sz;
-    const grip = input.handbrake && speed > 7 ? 1.9 : this.offroad ? 5 : 11;
+    const grip =
+      input.handbrake && speed > 7 ? 1.9 : this.offroad ? (sand ? 7 : 5) : 11;
     lateral *= Math.exp(-grip * dt);
     this.vx = nx * forward + sx * lateral;
     this.vz = nz * forward + sz * lateral;

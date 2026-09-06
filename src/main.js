@@ -592,7 +592,9 @@ class Game {
         : "五处风景已收集。挑选一场比赛，留下你的最佳纪录。";
     }
     $("surface-label").textContent = car.offroad
-      ? "草地 · 抓地降低"
+      ? car.sand
+        ? "沙地 · 松软高速"
+        : "草地 · 抓地降低"
       : "柏油路面";
     $("drift-label").style.opacity = car.drift > 0.2 ? "1" : "0";
     $("distance-travelled").textContent =

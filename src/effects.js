@@ -85,6 +85,7 @@ export class Effects {
             life: 0.85,
             size: 0.42,
             dust: car.offroad,
+            sand: car.sand,
           });
     }
     for (const p of this.items) {
@@ -139,7 +140,9 @@ export class Effects {
       s.position.set(p.x, p.y, p.z);
       s.scale.setScalar(p.size);
       s.material.opacity = (1 - p.age / p.life) * 0.65;
-      s.material.color.set(p.dust ? "#c4af89" : "#e5e9e2");
+      s.material.color.set(
+        p.sand ? "#ded0ab" : p.dust ? "#c4af89" : "#e5e9e2",
+      );
     }
   }
 }
