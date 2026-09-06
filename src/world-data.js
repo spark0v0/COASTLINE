@@ -198,7 +198,23 @@ export class WorldData {
       (Math.sin(x * 0.058 + z * 0.016) * Math.cos(z * 0.041) * 3.4 +
         Math.sin(x * 0.113 + z * 0.073) * 1.3) *
       smooth(-60, -200, z);
-    return 3.1 + mountains + valley + folds;
+    let h = 3.1 + mountains + valley + folds;
+    // Low shoreline eases below sea level so beaches slope into the water;
+    // tall sea cliffs keep their full drop.
+    const rim = this.shoreRim(x, z);
+    const beach = smooth(0.86, 1.0, rim) * (1 - smooth(6, 14, h));
+    return h * (1 - beach) + -1.4 * beach;
+  }
+  // Superellipse rim metric: 0 at the centre, 1 on the shoreline.
+  shoreRim(x, z) {
+    const dx = (x + 50) / 260,
+      dz = z / 350;
+    const a = Math.atan2(
+      Math.sign(dz) * Math.abs(dz) ** (1 / 0.38),
+      Math.sign(dx) * Math.abs(dx) ** (1 / 0.38),
+    );
+    const k = this.shoreVariation(a);
+    return Math.abs(dx / k) ** (2 / 0.38) + Math.abs(dz / k) ** (2 / 0.38);
   }
   shoreVariation(a) {
     return 1 + 0.026 * Math.sin(a * 3 + 0.3) + 0.016 * Math.sin(a * 7 - 1);
@@ -372,8 +388,8 @@ export class WorldData {
       if (p.z < -160 || (p.x < 450 && Math.abs(p.x + 201) > 3)) continue;
       const yaw = Math.atan2(q.z - p.z, q.x - p.x);
       for (const side of [-1, 1]) {
-        const x = p.x - Math.sin(yaw) * 16 * side,
-          z = p.z + Math.cos(yaw) * 16 * side;
+        const x = p.x - Math.sin(yaw) * 21 * side,
+          z = p.z + Math.cos(yaw) * 21 * side;
         if (
           !this.inside(x, z) ||
           this.isJunction(x, z, 0, 4) ||
@@ -402,7 +418,7 @@ export class WorldData {
           x,
           z,
           w: 0.34,
-          d: len + 0.06,
+          d: len + 0.55,
           yaw: Math.atan2(-dx, dz),
           h: 1,
         };

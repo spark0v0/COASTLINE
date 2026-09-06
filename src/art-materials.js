@@ -1,14 +1,37 @@
 import * as THREE from "three";
 import { rng } from "./math.js";
 
-// Shared, seamless surface textures. World projection preserves scale on every kit piece.
+// Shared surface materials. Photo-based CC0 textures (Poly Haven) drive the
+// big surfaces; world-space triplanar projection keeps every kit piece at
+// real scale. Small kit textures stay procedural.
+const EXTERNAL_MAPS = {
+  asphalt: {
+    map: "assets/surfaces/asphalt_02_diff_1k.jpg",
+    roughnessMap: "assets/surfaces/asphalt_02_rough_1k.jpg",
+  },
+  stone: { map: "assets/surfaces/aerial_rocks_02_diff_1k.jpg" },
+  grass: { map: "assets/surfaces/aerial_grass_rock_diff_1k.jpg" },
+  sand: { map: "assets/surfaces/aerial_beach_01_diff_1k.jpg" },
+  stucco: { map: "assets/surfaces/clay_plaster_diff_1k.jpg" },
+};
+
 export class ArtMaterials {
   constructor() {
     this.textures = new Map();
     this.materials = new Map();
+    this.loader = new THREE.TextureLoader();
   }
   texture(kind) {
     if (this.textures.has(kind)) return this.textures.get(kind);
+    const external = EXTERNAL_MAPS[kind];
+    if (external && external.map) {
+      const tex = this.loader.load(external.map);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 8;
+      this.textures.set(kind, tex);
+      return tex;
+    }
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 256;
     const ctx = canvas.getContext("2d"),
@@ -53,6 +76,15 @@ export class ArtMaterials {
     this.textures.set(kind, tex);
     return tex;
   }
+  roughnessTexture(kind) {
+    const key = kind + ":rough";
+    if (this.textures.has(key)) return this.textures.get(key);
+    const tex = this.loader.load(EXTERNAL_MAPS[kind].roughnessMap);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.anisotropy = 4;
+    this.textures.set(key, tex);
+    return tex;
+  }
   get(kind, color, roughness = 0.85) {
     const key = kind + color + roughness;
     if (this.materials.has(key)) return this.materials.get(key);
@@ -61,17 +93,27 @@ export class ArtMaterials {
       map: this.texture(kind),
       roughness,
     });
+    if (EXTERNAL_MAPS[kind]?.roughnessMap)
+      material.roughnessMap = this.roughnessTexture(kind);
     const scale =
       {
         stone: 0.22,
         roof: 0.45,
         wood: 0.32,
-        grass: 0.14,
-        asphalt: 0.8,
-        stucco: 0.75,
+        grass: 0.08,
+        sand: 0.16,
+        asphalt: 0.55,
+        stucco: 0.6,
       }[kind] || 0.35;
+    // How strongly the photo texture modulates the base colour. Dark source
+    // textures (plaster, dry grass) only add grain, they must not repaint.
+    const strength =
+      { stucco: 0.5, grass: 0.5, sand: 0.75, stone: 0.85, asphalt: 0.9 }[
+        kind
+      ] ?? 1;
     material.onBeforeCompile = (shader) => {
       shader.uniforms.artScale = { value: scale };
+      shader.uniforms.artStrength = { value: strength };
       shader.vertexShader = shader.vertexShader.replace(
         "#include <common>",
         "#include <common>\nvarying vec3 vArtWorld; varying vec3 vArtNormal;",
@@ -88,7 +130,7 @@ export class ArtMaterials {
       );
       shader.fragmentShader = shader.fragmentShader.replace(
         "#include <common>",
-        "#include <common>\nvarying vec3 vArtWorld; varying vec3 vArtNormal; uniform float artScale;",
+        "#include <common>\nvarying vec3 vArtWorld; varying vec3 vArtNormal; uniform float artScale; uniform float artStrength;",
       );
       shader.fragmentShader = shader.fragmentShader.replace(
         "#include <map_fragment>",
@@ -96,11 +138,22 @@ export class ArtMaterials {
         vec3 weights=pow(abs(normalize(vArtNormal)),vec3(6.0));weights/=max(dot(weights,vec3(1.0)),.001);
         vec3 p=vArtWorld*artScale;
         vec4 texel=texture2D(map,p.zy)*weights.x+texture2D(map,p.xz)*weights.y+texture2D(map,p.xy)*weights.z;
-        diffuseColor*=texel;
+        diffuseColor.rgb*=mix(vec3(1.0),texel.rgb,artStrength);
+      `,
+      );
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <roughnessmap_fragment>",
+        `#include <roughnessmap_fragment>
+        #ifdef USE_ROUGHNESSMAP
+          vec3 rWeights=pow(abs(normalize(vArtNormal)),vec3(6.0));rWeights/=max(dot(rWeights,vec3(1.0)),.001);
+          vec3 rP=vArtWorld*artScale;
+          float rTexel=texture2D(roughnessMap,rP.zy).g*rWeights.x+texture2D(roughnessMap,rP.xz).g*rWeights.y+texture2D(roughnessMap,rP.xy).g*rWeights.z;
+          roughnessFactor*=rTexel;
+        #endif
       `,
       );
     };
-    material.customProgramCacheKey = () => kind + scale;
+    material.customProgramCacheKey = () => kind + scale + strength;
     this.materials.set(key, material);
     return material;
   }

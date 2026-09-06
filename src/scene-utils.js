@@ -101,7 +101,7 @@ export class Batch {
     this.buckets.clear();
   }
   updateVisibility(x, z, low) {
-    const limit = low ? 520 : 1000;
+    const limit = low ? 700 : 1500;
     for (const m of this.meshes) {
       const p = m.userData.center;
       m.visible =
@@ -109,7 +109,7 @@ export class Batch {
         !(
           low &&
           m.userData.optionalDetail &&
-          Math.hypot(p.x - x, p.z - z) > 170
+          Math.hypot(p.x - x, p.z - z) > 220
         );
     }
   }

@@ -54,6 +54,8 @@ export function setupQA(game) {
     name = "完整计时赛";
     report = [];
     pilot = new RoutePilot(game.world);
+    // Start tracking from the event's actual grid position, not the route origin.
+    pilot.progress = game.selectedEvent.start.s;
     game.startRace();
     game.scriptedDriver = () => pilot.input(game.car);
     setReport("通过普通转向/油门输入驾驶；无位置传送。");

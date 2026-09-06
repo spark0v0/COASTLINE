@@ -19,16 +19,16 @@ export class GameRenderer {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.94;
+    this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2("#b9d3d2", 0.00072);
+    this.scene.fog = new THREE.FogExp2("#c2d8d0", 0.00066);
     this.camera = new THREE.PerspectiveCamera(57, 1, 0.18, 8000);
     this.camera.position.set(world.spawn.x + 12, 8, world.spawn.z - 12);
     this.look = new THREE.Vector3(world.spawn.x, 3, world.spawn.z);
-    this.scene.add(new THREE.HemisphereLight("#d6eeff", "#91805c", 1.15));
-    this.sun = new THREE.DirectionalLight("#fff0d4", 2.9);
+    this.scene.add(new THREE.HemisphereLight("#cfe3f7", "#8f8066", 1.0));
+    this.sun = new THREE.DirectionalLight("#ffe2b0", 3.1);
     this.sun.position.set(-90, 140, 65);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
@@ -42,13 +42,13 @@ export class GameRenderer {
     });
     this.sun.shadow.bias = -0.00022;
     this.sun.shadow.normalBias = 0.035;
-    this.sun.shadow.radius = 2;
+    this.sun.shadow.radius = 3.5;
     this.scene.add(this.sun, this.sun.target);
     const pmrem = new THREE.PMREMGenerator(this.renderer),
       room = new RoomEnvironment();
     this.environment = pmrem.fromScene(room, 0.015);
     this.scene.environment = this.environment.texture;
-    this.scene.environmentIntensity = 0.38;
+    this.scene.environmentIntensity = 0.5;
     room.dispose();
     pmrem.dispose();
     const sky = new THREE.Mesh(
@@ -57,19 +57,20 @@ export class GameRenderer {
         side: THREE.BackSide,
         depthWrite: false,
         uniforms: {
-          top: { value: new THREE.Color("#349acf") },
-          bottom: { value: new THREE.Color("#c8e9e8") },
+          top: { value: new THREE.Color("#2e88c8") },
+          bottom: { value: new THREE.Color("#dcefe6") },
           sun: { value: new THREE.Vector3(-0.45, 0.77, 0.3).normalize() },
         },
         vertexShader:
           "varying vec3 vPosition;void main(){vPosition=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
         fragmentShader:
-          "uniform vec3 top;uniform vec3 bottom;uniform vec3 sun;varying vec3 vPosition;void main(){vec3 dir=normalize(vPosition);float h=pow(max(dir.y,0.),.48);vec3 color=mix(bottom,top,h);float disk=smoothstep(.9993,.9997,dot(dir,sun));float glow=pow(max(dot(dir,sun),0.),24.);color+=vec3(1.,.85,.53)*(disk*.8+glow*.14);gl_FragColor=vec4(color,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}",
+          "uniform vec3 top;uniform vec3 bottom;uniform vec3 sun;varying vec3 vPosition;void main(){vec3 dir=normalize(vPosition);float h=pow(max(dir.y,0.),.48);vec3 color=mix(bottom,top,h);float disk=smoothstep(.9993,.9997,dot(dir,sun));float glow=pow(max(dot(dir,sun),0.),24.);color+=vec3(1.,.85,.53)*(disk*.8+glow*.18);gl_FragColor=vec4(color,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}",
       }),
     );
     sky.frustumCulled = false;
     this.scene.add(sky);
     this.sky = sky;
+    this.makeClouds();
     this.scenery = new Scenery(this.scene, world);
     this.vehicle = new VehicleView(this.scene);
     this.makeGates();
@@ -117,6 +118,51 @@ export class GameRenderer {
     this.gateArrow = arrow;
     this.gates.visible = false;
   }
+  makeClouds() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 128;
+    const c = canvas.getContext("2d"),
+      r = ((n) => () => (
+        (n = (Math.imul(n, 1664525) + 1013904223) >>> 0),
+        n / 4294967296
+      ))(901);
+    for (let i = 0; i < 9; i++) {
+      const x = 40 + r() * 176,
+        y = 44 + r() * 40,
+        rad = 22 + r() * 26;
+      const g = c.createRadialGradient(x, y, 2, x, y, rad);
+      g.addColorStop(0, "rgba(255,255,255,.55)");
+      g.addColorStop(1, "rgba(255,255,255,0)");
+      c.fillStyle = g;
+      c.fillRect(0, 0, 256, 128);
+    }
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    this.clouds = new THREE.Group();
+    this.scene.add(this.clouds);
+    for (let i = 0; i < 12; i++) {
+      const sprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: texture,
+          transparent: true,
+          opacity: 0.78,
+          depthWrite: false,
+          fog: false,
+        }),
+      );
+      const angle = (i / 12) * Math.PI * 2 + (i % 3) * 0.2,
+        radius = 4100 + (i % 4) * 380;
+      sprite.position.set(
+        Math.cos(angle) * radius,
+        430 + ((i * 97) % 560),
+        Math.sin(angle) * radius,
+      );
+      const s = 760 + ((i * 131) % 620);
+      sprite.scale.set(s, s * 0.42, 1);
+      this.clouds.add(sprite);
+    }
+  }
   resize() {
     const w = this.canvas.clientWidth,
       h = this.canvas.clientHeight;
@@ -135,7 +181,7 @@ export class GameRenderer {
     this.sun.shadow.mapSize.set(low ? 1024 : 2048, low ? 1024 : 2048);
     this.sun.shadow.map?.dispose();
     this.sun.shadow.map = null;
-    this.scene.fog.density = low ? 0.0015 : 0.00072;
+    this.scene.fog.density = low ? 0.0014 : 0.00066;
     this.scenery.setQuality(low);
     this.resize();
   }
@@ -183,9 +229,24 @@ export class GameRenderer {
       car.z + fz * (3.8 + speed * 0.07),
     );
     if (mode === "welcome") {
-      const angle = -0.73;
-      eye.set(car.x - 8.4, car.y + 3.4, car.z - 8.8);
-      target.set(car.x - 2.8, car.y + 1.0, car.z + 1.7);
+      // Beauty shot from the land side, framing the car against the sea.
+      const rx = Math.cos(car.yaw),
+        rz = Math.sin(car.yaw);
+      const seaSide =
+        this.world.height(car.x - rx * 10, car.z - rz * 10) <
+        this.world.height(car.x + rx * 10, car.z + rz * 10)
+          ? -1
+          : 1;
+      eye.set(
+        car.x - fx * 7.2 - rx * seaSide * 3.4,
+        car.y + 3.4,
+        car.z - fz * 7.2 - rz * seaSide * 3.4,
+      );
+      target.set(
+        car.x + fx * 6 + rx * seaSide * 2.6,
+        car.y + 1.6,
+        car.z + fz * 6 + rz * seaSide * 2.6,
+      );
     } else {
       const roadAhead = this.world.height(target.x, target.z) + 1.12;
       target.y = target.y * 0.25 + roadAhead * 0.75;
@@ -214,6 +275,7 @@ export class GameRenderer {
     this.sun.target.position.set(sx, car.y, sz);
     this.sun.position.set(sx - 80, car.y + 101, sz + 60);
     this.sky.position.copy(this.camera.position);
+    this.clouds.position.copy(this.camera.position);
     this.vehicle.update(car, time);
     this.scenery.update(time, car);
     this.gates.visible = race.state === "running" || race.state === "countdown";

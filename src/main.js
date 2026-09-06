@@ -380,13 +380,15 @@ class Game {
       }
     });
     document.addEventListener("keyup", (e) => this.keys.delete(e.code));
+    // QA sessions drive the car from scripts, so they must survive focus loss.
+    const qaMode = new URLSearchParams(location.search).has("qa");
     window.addEventListener("blur", () => {
       this.keys.clear();
-      if (this.mode === "play") this.panel("pause");
+      if (this.mode === "play" && !qaMode) this.panel("pause");
     });
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
-        if (this.mode === "play") this.panel("pause");
+        if (this.mode === "play" && !qaMode) this.panel("pause");
         this.audio.suspend();
         this.cancelSchedule();
       } else {
@@ -745,8 +747,10 @@ class Game {
 try {
   const game = new Game();
   // Optional in-browser verification panel: append ?qa=1 to the URL.
-  if (new URLSearchParams(location.search).has("qa"))
+  if (new URLSearchParams(location.search).has("qa")) {
+    window.__game = game;
     import("./qa.js").then((m) => m.setupQA(game)).catch(() => {});
+  }
 } catch (error) {
   console.error(error);
   $("fatal").hidden = false;

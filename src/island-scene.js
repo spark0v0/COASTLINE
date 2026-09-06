@@ -125,8 +125,8 @@ export class IslandScenery extends Scenery {
       );
     }
     for (const [positions, kind, color] of [
-      [beach, "stucco", "#ead4a2"],
-      [cliff, "stone", "#c0ac86"],
+      [beach, "sand", "#e3d3a4"],
+      [cliff, "stone", "#bfb090"],
     ]) {
       const mat = this.art.get(kind, color);
       mat.side = THREE.DoubleSide;
@@ -196,11 +196,13 @@ export class IslandScenery extends Scenery {
   buildRoads() {
     const w = this.world;
     const mats = [
-      this.art.get("asphalt", "#666963", 0.96),
+      this.art.get("asphalt", "#8a8d87", 0.96),
       this.art.get("stone", "#c7baa0"),
       new THREE.MeshStandardMaterial({ color: "#eee3bd", roughness: 0.9 }),
     ];
     mats.forEach((m) => (m.side = THREE.DoubleSide));
+    const urban = (x, z) =>
+      (x > -660 && x < 460 && z > -110 && z < 820) || (x > 455 && z > -30);
     for (const path of w.paths) {
       let surfaces = [[], [], []];
       const flush = () => {
@@ -243,9 +245,17 @@ export class IslandScenery extends Scenery {
         };
         ribbon(surfaces[0], 0, path.width, 0.082 + path.id * 0.001);
         if (!w.isJunction((a.x + b.x) / 2, (a.z + b.z) / 2, path.id, 3)) {
-          for (const side of [-1, 1]) {
-            ribbon(surfaces[1], side * (path.width / 2 + 1.2), 2.4, 0.06);
-            ribbon(surfaces[2], side * (path.width / 2 - 0.4), 0.12, 0.105);
+          const mx = (a.x + b.x) / 2,
+            mz = (a.z + b.z) / 2;
+          if (urban(mx, mz)) {
+            for (const side of [-1, 1]) {
+              ribbon(surfaces[1], side * (path.width / 2 + 1.2), 2.4, 0.06);
+              ribbon(surfaces[2], side * (path.width / 2 - 0.4), 0.12, 0.105);
+            }
+          } else {
+            // Rural shoulders: compacted gravel instead of city kerbs.
+            for (const side of [-1, 1])
+              ribbon(surfaces[1], side * (path.width / 2 + 0.7), 2.2, 0.04);
           }
           if (i % 6 < 3) ribbon(surfaces[2], 0, 0.14, 0.108);
         }
@@ -449,20 +459,20 @@ export class IslandScenery extends Scenery {
     const leaf = ["#3f704f", "#5d8152", "#758c5c", "#8a9b6a"];
     // Feathered palm fronds: individual curved leaflets with visible gaps.
     const p = [];
-    for (let arm = 0; arm < 9; arm++) {
-      const angle = (arm * Math.PI * 2) / 9,
+    for (let arm = 0; arm < 11; arm++) {
+      const angle = (arm * Math.PI * 2) / 11,
         dx = Math.cos(angle),
         dz = Math.sin(angle);
       const center = (t) => [
-        dx * t * 5.1,
-        Math.sin(t * Math.PI) * 1.2 - t * t * 2.1,
-        dz * t * 5.1,
+        dx * t * 4.15,
+        Math.sin(t * Math.PI) * 1.1 - t * t * 2.4,
+        dz * t * 4.15,
       ];
       for (let j = 1; j < 15; j++) {
         const t = j / 15,
           a = center(t),
           v = center(Math.min(1, t + 0.045)),
-          span = Math.sin(t * Math.PI) * 0.95;
+          span = Math.sin(t * Math.PI) * 1.02;
         for (const side of [-1, 1]) {
           const tip = [
             a[0] - dz * span * side + dx * 0.3,
@@ -498,30 +508,53 @@ export class IslandScenery extends Scenery {
           [0.85 + t.h * 0.015, 1, 0.85 + t.h * 0.015],
           [0, t.seed, 0],
         );
+      } else if (t.kind === "pine") {
+        b.add(
+          "cylinder",
+          trunk,
+          [t.x, y + t.h * 0.16, t.z],
+          [0.24, t.h * 0.36, 0.24],
+        );
+        const greens = ["#2f5d46", "#3a6a4e", "#457757"];
+        for (let i = 0; i < 4; i++) {
+          const f = i / 3,
+            coneH = t.h * 0.36,
+            radius = t.h * (0.34 - f * 0.075),
+            base = t.h * (0.2 + f * 0.24);
+          b.add(
+            "cone",
+            greens[i % 3],
+            [
+              t.x + Math.sin(t.seed * 3 + i * 2.1) * 0.35,
+              y + base + coneH * 0.5,
+              t.z + Math.cos(t.seed * 2 + i * 1.7) * 0.35,
+            ],
+            [radius, coneH, radius],
+            [0, t.seed + i, 0],
+          );
+        }
       } else {
         b.add(
           "cylinder",
           trunk,
-          [t.x, y + t.h * 0.32, t.z],
-          [0.3, t.h * 0.64, 0.3],
+          [t.x, y + t.h * 0.26, t.z],
+          [0.26 + r() * 0.08, t.h * 0.55, 0.26 + r() * 0.08],
+          [Math.sin(t.seed) * 0.06, 0, Math.cos(t.seed) * 0.06],
         );
-        const count = t.kind === "pine" ? 6 : 5;
-        for (let i = 0; i < count; i++) {
+        const blobs = 4 + Math.floor(r() * 2);
+        for (let i = 0; i < blobs; i++) {
           const angle = i * 2.4 + t.seed,
-            spread = t.kind === "pine" ? t.h * 0.18 : 1.7;
-          const top =
-            t.kind === "pine" ? t.h * (0.53 + (i % 3) * 0.12) : t.h * 0.75;
-          const size =
-            t.kind === "pine" ? t.h * (0.2 - (i % 3) * 0.027) : 2 + r() * 0.6;
+            spread = t.h * 0.13 * (0.5 + r() * 0.6),
+            size = t.h * (0.15 + r() * 0.08);
           b.add(
             "sphere",
             leaf[i % 4],
             [
               t.x + Math.cos(angle) * spread,
-              y + top,
+              y + t.h * (0.62 + r() * 0.3),
               t.z + Math.sin(angle) * spread,
             ],
-            [size, size * (t.kind === "pine" ? 1.18 : 0.78), size],
+            [size * 1.15, size * 0.8, size * 1.05],
             [0, angle, 0],
           );
         }
@@ -614,24 +647,42 @@ export class IslandScenery extends Scenery {
     const w = this.world,
       b = this.batch,
       r = rng(511),
-      rock = this.art.get("stone", "#bcae91");
-    // Sculpted outcrops give mountains and sea cliffs a sense of geological scale.
-    for (let i = 0; i < 370; i++) {
+      rock = this.art.get("stone", "#b3a68b");
+    // Faceted rock silhouettes replace smooth domes so outcrops read as stone.
+    const makeRock = (seed) => {
+      const g = new THREE.IcosahedronGeometry(1, 1),
+        pos = g.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i),
+          y = pos.getY(i),
+          z = pos.getZ(i);
+        const n =
+          0.72 +
+          0.5 * Math.abs(Math.sin(x * 12.9 + y * 7.7 + z * 5.3 + seed * 3.1));
+        pos.setXYZ(i, x * n, y * n * 0.82, z * n);
+      }
+      g.computeVertexNormals();
+      return g;
+    };
+    b.geometries.rock0 = makeRock(1);
+    b.geometries.rock1 = makeRock(2);
+    b.geometries.rock2 = makeRock(3);
+    for (let i = 0; i < 340; i++) {
       const x = -1080 + r() * 1800,
         z = -1150 + r() * 2150;
       if (!w.inside(x, z) || (z > -350 && x < 570)) continue;
       const near = w.roadGrid.has(Math.floor(x / 32) + "," + Math.floor(z / 32))
         ? w.nearestRoad(x, z)
         : null;
-      const size = 3 + r() * 7;
+      const size = 2.2 + r() * 5.5;
       if (near && near.d < near.width / 2 + size + 5) continue;
       const y = w.height(x, z);
       b.add(
-        "sphere",
+        "rock" + (i % 3),
         rock,
-        [x, y + size * 0.2, z],
-        [size, size * (0.6 + r() * 0.8), size * 0.8],
-        [r() * 0.5, r() * 6, r() * 0.25],
+        [x, y + size * 0.24, z],
+        [size, size * (0.55 + r() * 0.75), size * (0.7 + r() * 0.3)],
+        [r() * 0.5, r() * 6, r() * 0.3],
       );
     }
     // Low roadside planting and street furniture keep the driving sightline clear.
