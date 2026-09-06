@@ -23,20 +23,21 @@ export class GameRenderer {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2("#c2d8d0", 0.00066);
+    // Golden late-afternoon: low warm sun, cool ambient fill, hazy gold fog.
+    this.scene.fog = new THREE.FogExp2("#d3ccbc", 0.00066);
     this.camera = new THREE.PerspectiveCamera(57, 1, 0.18, 8000);
     this.camera.position.set(world.spawn.x + 12, 8, world.spawn.z - 12);
     this.look = new THREE.Vector3(world.spawn.x, 3, world.spawn.z);
-    this.scene.add(new THREE.HemisphereLight("#cfe3f7", "#8f8066", 1.0));
-    this.sun = new THREE.DirectionalLight("#ffe2b0", 3.1);
+    this.scene.add(new THREE.HemisphereLight("#c9dff2", "#8f8066", 1.05));
+    this.sun = new THREE.DirectionalLight("#ffbe82", 2.9);
     this.sun.position.set(-90, 140, 65);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
     Object.assign(this.sun.shadow.camera, {
-      left: -65,
-      right: 65,
-      top: 65,
-      bottom: -65,
+      left: -80,
+      right: 80,
+      top: 80,
+      bottom: -80,
       near: 1,
       far: 360,
     });
@@ -57,9 +58,9 @@ export class GameRenderer {
         side: THREE.BackSide,
         depthWrite: false,
         uniforms: {
-          top: { value: new THREE.Color("#2e88c8") },
-          bottom: { value: new THREE.Color("#dcefe6") },
-          sun: { value: new THREE.Vector3(-0.45, 0.77, 0.3).normalize() },
+          top: { value: new THREE.Color("#2e7cbd") },
+          bottom: { value: new THREE.Color("#f0ddb9") },
+          sun: { value: new THREE.Vector3(-0.7, 0.54, 0.47).normalize() },
         },
         vertexShader:
           "varying vec3 vPosition;void main(){vPosition=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
@@ -273,7 +274,8 @@ export class GameRenderer {
     const sx = Math.round(car.x / 2) * 2,
       sz = Math.round(car.z / 2) * 2;
     this.sun.target.position.set(sx, car.y, sz);
-    this.sun.position.set(sx - 80, car.y + 101, sz + 60);
+    // Sun kept low in the west for long golden-hour shadows.
+    this.sun.position.set(sx - 84, car.y + 64, sz + 56);
     this.sky.position.copy(this.camera.position);
     this.clouds.position.copy(this.camera.position);
     this.vehicle.update(car, time);

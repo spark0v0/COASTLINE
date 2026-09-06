@@ -5,12 +5,13 @@ export function buildRoads(S) {
   const w = S.world;
   const mats = [
     S.art.get("asphalt", "#8a8d87", 0.96),
-    S.art.get("stone", "#c7baa0"),
+    S.art.get("paving", "#cbc2ad"),
     new THREE.MeshStandardMaterial({ color: "#eee3bd", roughness: 0.9 }),
+    S.art.get("stone", "#b3a68b"),
   ];
   mats.forEach((m) => (m.side = THREE.DoubleSide));
   for (const path of w.paths) {
-    let surfaces = [[], [], []];
+    let surfaces = [[], [], [], []];
     const flush = () => {
       surfaces.forEach((p, i) => {
         if (p.length)
@@ -24,7 +25,7 @@ export function buildRoads(S) {
             false,
           );
       });
-      surfaces = [[], [], []];
+      surfaces = [[], [], [], []];
     };
     for (let i = 1; i < path.points.length; i++) {
       const p = path.points,
@@ -61,7 +62,7 @@ export function buildRoads(S) {
         } else {
           // Rural shoulders: compacted gravel instead of city kerbs.
           for (const side of [-1, 1])
-            ribbon(surfaces[1], side * (path.width / 2 + 0.7), 2.2, 0.04);
+            ribbon(surfaces[3], side * (path.width / 2 + 0.7), 2.2, 0.04);
         }
         if (i % 6 < 3) ribbon(surfaces[2], 0, 0.14, 0.108);
       }

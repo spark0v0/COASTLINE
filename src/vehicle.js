@@ -46,62 +46,74 @@ export class VehicleView {
     const body = this.chassis,
       box = (x, y, z, w, h, d, mat = paint, rot = [0, 0, 0]) =>
         mesh(new THREE.BoxGeometry(w, h, d), mat, body, [x, y, z], rot);
-    // Curved fender lips, shut lines and brake hardware improve the close driving view.
+    // Fender lips and beltline trim define the wheel arches from the side.
     for (const side of [-1, 1]) {
       for (const zz of [-1.37, 1.37]) {
         mesh(
-          new THREE.TorusGeometry(0.405, 0.045, 8, 28, Math.PI),
+          new THREE.TorusGeometry(0.44, 0.05, 8, 28, Math.PI),
           paint,
           body,
-          [side * 1.035, 0.37, zz],
+          [side * 1.015, 0.4, zz],
           [0, (side * Math.PI) / 2, 0],
         );
+        // Dark wheel-well liner behind each wheel so arches read as openings.
+        box(side * 0.96, 0.34, zz, 0.12, 0.52, 0.92, dark, [0, 0, 0]);
       }
-      box(side * 1.012, 0.59, -0.02, 0.017, 0.018, 1.6, dark);
+      box(side * 1.012, 0.59, -0.02, 0.017, 0.018, 1.7, dark);
       box(side * 1.012, 0.74, 0.48, 0.022, 0.055, 0.21, alloy);
+      // Side skirts bridging the wheels.
+      box(side * 0.99, 0.2, 0, 0.1, 0.16, 1.95, dark);
     }
+    // Hull loft: ten stations, twelve-point rounded sections with tumblehome.
     const sections = [
-      [-2.29, 0.86, 0.63],
-      [-1.88, 0.97, 0.76],
-      [-1.33, 1.03, 0.86],
-      [-0.73, 1.0, 0.89],
-      [0.65, 1.02, 0.89],
-      [1.38, 1.05, 0.94],
-      [1.95, 0.99, 0.84],
-      [2.22, 0.9, 0.73],
+      [-2.34, 0.72, 0.5],
+      [-2.1, 0.86, 0.6],
+      [-1.72, 0.96, 0.72],
+      [-1.2, 1.02, 0.83],
+      [-0.55, 1.04, 0.9],
+      [0.35, 1.04, 0.9],
+      [1.1, 1.06, 0.93],
+      [1.8, 1.0, 0.86],
+      [2.15, 0.9, 0.76],
+      [2.38, 0.74, 0.62],
+    ];
+    const section = (w, h) => [
+      [-0.62 * w, 0.16],
+      [-0.94 * w, 0.24],
+      [-1.0 * w, 0.4],
+      [-0.97 * w, 0.62],
+      [-0.8 * w, 0.88],
+      [-0.42 * w, h],
+      [0.42 * w, h],
+      [0.8 * w, 0.88],
+      [0.97 * w, 0.62],
+      [1.0 * w, 0.4],
+      [0.94 * w, 0.24],
+      [0.62 * w, 0.16],
     ];
     const positions = [],
       indices = [];
     for (const [z, w, h] of sections)
-      for (const [x, y] of [
-        [-0.79 * w, 0.28],
-        [-w, 0.39],
-        [-w, 0.63],
-        [-0.9 * w, h],
-        [-0.45 * w, h + 0.035],
-        [0.45 * w, h + 0.035],
-        [0.9 * w, h],
-        [w, 0.63],
-        [w, 0.39],
-        [0.79 * w, 0.28],
-      ])
-        positions.push(x, y, z);
+      for (const [x, y] of section(w, h)) positions.push(x, y, z);
+    const ring = section(1, 1).length;
     for (let i = 1; i < sections.length; i++)
-      for (let j = 0; j < 10; j++) {
-        const a = (i - 1) * 10 + j,
-          b = (i - 1) * 10 + ((j + 1) % 10),
-          c = i * 10 + ((j + 1) % 10),
-          d = i * 10 + j;
+      for (let j = 0; j < ring; j++) {
+        const a = (i - 1) * ring + j,
+          b = (i - 1) * ring + ((j + 1) % ring),
+          c = i * ring + ((j + 1) % ring),
+          d = i * ring + j;
         indices.push(a, b, c, a, c, d);
       }
-    for (const base of [0, (sections.length - 1) * 10])
-      for (let j = 1; j < 9; j++) indices.push(base, base + j, base + j + 1);
+    for (const base of [0, (sections.length - 1) * ring])
+      for (let j = 1; j < ring - 1; j++)
+        indices.push(base, base + j, base + j + 1);
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
     g.setIndex(indices);
     g.computeVertexNormals();
     paint.side = THREE.DoubleSide;
     mesh(g, paint, body);
+    // Glass canopy: windshield, roof panel, rear screen and side windows.
     const q = (a, b, c, d, mat) => {
       const p = [];
       quad(p, a, b, c, d);
@@ -138,6 +150,8 @@ export class VehicleView {
         glass,
       );
       box(s * 0.745, 1.12, 0.39, 0.055, 0.46, 0.07, paint, [0, 0, s * 0.2]);
+      // Mirrors on the A-pillar bases.
+      box(s * 0.92, 0.98, -0.78, 0.16, 0.07, 0.1, paint);
       box(s * 1.02, 0.35, 0.1, 0.06, 0.15, 3.39, dark);
       box(s * 1.035, 0.98, -0.61, 0.24, 0.12, 0.31, paint);
       box(s * 0.9, 0.97, -0.6, 0.21, 0.05, 0.08, dark);
@@ -160,13 +174,45 @@ export class VehicleView {
       box(s * 0.62, 0.46, 2.19, 0.23, 0.17, 0.26, alloy);
       box(s * 0.64, 1.02, 1.72, 0.09, 0.27, 0.08, dark);
     }
+    // Interior seen through the glass: dash, wheel, seats.
+    const cabin = new THREE.MeshStandardMaterial({
+      color: "#1c2830",
+      roughness: 0.7,
+    });
+    box(0, 0.82, -0.42, 1.2, 0.16, 0.34, cabin);
+    mesh(
+      new THREE.TorusGeometry(0.11, 0.02, 6, 20),
+      cabin,
+      body,
+      [-0.36, 0.92, -0.16],
+      [0.35, 0, 0],
+    );
+    for (const s of [-1, 1]) {
+      box(s * 0.38, 0.56, 0.32, 0.44, 0.1, 0.5, cabin, [-0.12, 0, 0]);
+      box(s * 0.38, 0.72, 0.5, 0.44, 0.42, 0.12, cabin, [-0.12, 0, 0]);
+      box(s * 0.38, 1.02, 0.56, 0.3, 0.14, 0.1, cabin, [-0.12, 0, 0]);
+    }
     box(0, 0.41, -2.27, 1.41, 0.18, 0.11, dark);
     box(0, 0.31, -2.14, 1.82, 0.065, 0.42, dark);
+    // Front splitter lip.
+    box(0, 0.13, -2.24, 1.6, 0.07, 0.3, dark);
     box(0, 0.43, 2.2, 1.59, 0.2, 0.09, dark);
     for (let i = -3; i <= 3; i++)
       box(i * 0.19, 0.31, 2.08, 0.035, 0.16, 0.36, dark);
-    box(0, 1.18, 1.83, 2.13, 0.07, 0.34, dark, [0.035, 0, 0]);
-    for (const s of [-1, 1]) box(s * 1.06, 1.21, 1.84, 0.045, 0.16, 0.42, dark);
+    // Twin exhaust tips.
+    for (const s of [-1, 1])
+      mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 0.16, 12),
+        alloy,
+        body,
+        [s * 0.24, 0.36, 2.32],
+        [Math.PI / 2, 0, 0],
+      );
+    // Ducktail spoiler: slim wing on low pylons with small endplates.
+    box(0, 0.98, 1.78, 0.08, 0.14, 0.14, dark);
+    box(0, 1.14, 1.86, 1.52, 0.045, 0.3, paint, [-0.1, 0, 0]);
+    for (const s of [-1, 1])
+      box(s * 0.76, 1.12, 1.86, 0.03, 0.17, 0.28, dark, [-0.1, 0, 0]);
     this.brakeMat = new THREE.MeshStandardMaterial({
       color: "#b32823",
       emissive: "#ff3325",
@@ -183,8 +229,7 @@ export class VehicleView {
       }),
     });
     mesh(new THREE.PlaneGeometry(0.55, 0.18), plate, body, [0, 0.53, 2.257]);
-    for (let i = 0; i < 4; i++)
-      box(0, 0.988, 1.18 + i * 0.11, 0.68, 0.018, 0.037, dark);
+    this.wheels = [];
     for (const x of [-1.035, 1.035])
       for (const z of [-1.37, 1.37]) {
         const steer = new THREE.Group();
@@ -201,6 +246,12 @@ export class VehicleView {
         const disc = new THREE.CylinderGeometry(0.205, 0.205, 0.018, 24);
         disc.rotateZ(Math.PI / 2);
         mesh(disc, alloy, wheel, [x > 0 ? 0.1 : -0.1, 0, 0]);
+        // Red caliper peeking over the disc.
+        mesh(new THREE.BoxGeometry(0.05, 0.12, 0.07), this.brakeMat, wheel, [
+          x > 0 ? 0.115 : -0.115,
+          0.1,
+          0,
+        ]);
         mesh(new THREE.BoxGeometry(0.06, 0.19, 0.1), paint, steer, [
           x > 0 ? 0.12 : -0.12,
           0.06,
@@ -268,7 +319,7 @@ export class VehicleView {
         new THREE.ConeGeometry(0.105, 0.9, 6),
         flameMat,
         this.flames,
-        [s * 0.62, 0.46, 2.65],
+        [s * 0.24, 0.36, 2.75],
         [Math.PI / 2, 0, 0],
         [1, 1, 1],
         false,

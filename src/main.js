@@ -783,5 +783,5 @@ try {
 } catch (error) {
   console.error(error);
   $("fatal").hidden = false;
-  $("fatal-message").textContent = error.message;
+  $("fatal-message").textContent = error.stack || error.message;
 }

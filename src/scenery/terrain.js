@@ -139,6 +139,7 @@ export function buildTerrain(S) {
     false,
   );
   S.waterMaterial = new THREE.ShaderMaterial({
+    transparent: true,
     uniforms: {
       time: { value: 0 },
       center: { value: center.x },
@@ -152,16 +153,22 @@ export function buildTerrain(S) {
         vec2 q=abs((p-vec2(center,0.))/radius);
         float edge=pow(pow(q.x,5.263)+pow(q.y,5.263),1./5.263);
         float depth=smoothstep(1.,1.38,edge);
-        vec3 col=mix(vec3(.075,.53,.47),vec3(.024,.22,.34),depth);
+        vec3 col=mix(vec3(.09,.56,.5),vec3(.024,.22,.34),depth);
         float a=sin(p.x*.11+time*.8),b=sin(p.y*.14-time*.65);
         vec3 n=normalize(vec3(a*.085,1.,b*.085));
         vec3 view=normalize(cameraPosition-vWorld);
-        vec3 light=normalize(vec3(-.55,.8,.45));
+        vec3 light=normalize(vec3(-.7,.54,.47));
         float spec=pow(max(dot(n,normalize(view+light)),0.),150.);
         float ripple=sin(p.x*.32+sin(p.y*.23)+time)*sin(p.y*.46-time*.7);
         col+=ripple*.008+spec*vec3(.6,.56,.38)*.4;
+        // Breaking foam line pulses back and forth across the waterline.
+        float band=smoothstep(.993,1.,edge)*(1.-smoothstep(1.,1.018,edge));
+        float wave=sin(edge*280.-time*2.4+sin(p.x*.05)*2.5);
+        col+=band*(.14+.13*wave)*vec3(1.,.97,.88);
         col=mix(col,vec3(.53,.71,.73),smoothstep(1000.,3800.,length(cameraPosition-vWorld)));
-        gl_FragColor=vec4(col,1.);
+        // Shallows stay slightly translucent so the sand reads through.
+        float alpha=mix(.8,.97,smoothstep(.99,1.05,edge));
+        gl_FragColor=vec4(col,alpha);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,

@@ -234,7 +234,7 @@ export class WorldData {
     // Low shoreline eases below sea level so beaches slope into the water;
     // tall sea cliffs keep their full drop.
     const rim = this.shoreRim(x, z);
-    const beach = smooth(0.86, 1.0, rim) * (1 - smooth(6, 14, h));
+    const beach = smooth(0.82, 1.0, rim) * (1 - smooth(6, 14, h));
     return h * (1 - beach) + -1.4 * beach;
   }
   // Superellipse rim metric: 0 at the centre, 1 on the shoreline.

@@ -65,6 +65,17 @@ export class ArtMaterials {
         }
         if (kind === "wood")
           n += 13 * Math.sin(x * 0.6 + Math.sin(y * 0.08) * 0.6);
+        if (kind === "paving") {
+          // Flagstone grid with grout lines and per-stone tonal drift.
+          const row = Math.floor(y / 42),
+            xx = (x + (row % 2) * 21) % 42;
+          n =
+            xx < 2 || y % 42 < 2
+              ? 148
+              : 204 +
+                13 * Math.sin(row * 13 + Math.floor(xx / 21) * 5) +
+                (r() - 0.5) * 15;
+        }
         image.data[i] = image.data[i + 1] = image.data[i + 2] = n;
         image.data[i + 3] = 255;
       }
@@ -104,6 +115,7 @@ export class ArtMaterials {
         sand: 0.16,
         asphalt: 0.55,
         stucco: 0.6,
+        paving: 1.1,
       }[kind] || 0.35;
     // How strongly the photo texture modulates the base colour. Dark source
     // textures (plaster, dry grass) only add grain, they must not repaint.
