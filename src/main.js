@@ -162,7 +162,8 @@ class Game {
         (this.selectedEvent.length / 1000).toFixed(1) +
         " km · " +
         this.race.points.length +
-        " 个检查点",
+        " 个检查点 · 金牌 " +
+        formatTime(this.selectedEvent.medals.gold),
     );
   }
   loadBest() {
@@ -180,9 +181,12 @@ class Game {
     for (const event of this.world.events) {
       const button = document.createElement("button");
       button.className = "event-card";
-      let best = null;
+      let best = null,
+        medal = 0;
       try {
         best = Number(localStorage.getItem("coastline.best.v3." + event.id));
+        medal =
+          Number(localStorage.getItem("coastline.medal.v1." + event.id)) || 0;
       } catch {}
       button.innerHTML =
         '<span class="event-number">' +
@@ -197,6 +201,7 @@ class Game {
         event.count +
         " 检查点 · 最佳 " +
         (best > 0 ? formatTime(best) : "等待挑战") +
+        (medal ? " · " + ["", "🥉", "🥈", "🥇"][medal] : "") +
         "</em></span><b>↗</b>";
       button.onclick = () => {
         this.selectedEvent = event;
@@ -211,6 +216,17 @@ class Game {
     this.eventReturn = this.mode;
     this.panel("events");
   }
+  medalRank(elapsed) {
+    const m = this.selectedEvent.medals;
+    if (!m) return 0;
+    return elapsed <= m.gold
+      ? 3
+      : elapsed <= m.silver
+        ? 2
+        : elapsed <= m.bronze
+          ? 1
+          : 0;
+  }
   finish() {
     const r = this.race,
       record = this.best === null || r.elapsed < this.best;
@@ -223,10 +239,21 @@ class Game {
         );
       } catch {}
     }
+    const medal = this.medalRank(r.elapsed);
+    if (medal > 0) {
+      try {
+        const key = "coastline.medal.v1." + this.selectedEvent.id;
+        if (medal > (Number(localStorage.getItem(key)) || 0))
+          localStorage.setItem(key, String(medal));
+      } catch {}
+    }
     $("result-time").textContent = formatTime(r.elapsed);
     $("best-time").textContent = formatTime(this.best);
     $("result-speed").textContent = Math.round(this.raceTopSpeed) + " km/h";
     $("result-penalty").textContent = "+" + r.penalty + " 秒";
+    $("result-medal").textContent = ["—", "🥉 铜牌", "🥈 银牌", "🥇 金牌"][
+      medal
+    ];
     $("result-route").textContent =
       this.selectedEvent.name + " · 所有检查点已通过";
     $("record-label").textContent = record

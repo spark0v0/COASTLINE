@@ -47,6 +47,7 @@ export const RACE_DEFINITIONS = [
     from: 0.63,
     to: 0.97,
     count: 14,
+    medals: { gold: 67, silver: 81, bronze: 100 },
   },
   {
     id: "ridge",
@@ -55,6 +56,7 @@ export const RACE_DEFINITIONS = [
     from: 0.13,
     to: 0.61,
     count: 20,
+    medals: { gold: 106, silver: 127, bronze: 156 },
   },
   {
     id: "island",
@@ -63,5 +65,6 @@ export const RACE_DEFINITIONS = [
     from: 0,
     to: 1,
     count: 36,
+    medals: { gold: 209, silver: 251, bronze: 309 },
   },
 ];

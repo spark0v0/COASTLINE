@@ -88,18 +88,50 @@ export class WorldData {
         350 * S * Math.sign(s) * Math.abs(s) ** 0.38 * k,
       );
     });
+    // Marina spur: links the town's south street to the fishing harbour.
+    this.harbor = this.shore.reduce(
+      (best, p) =>
+        Math.abs(p.x - 320) + Math.abs(p.z - 1110) <
+        Math.abs(best.x - 320) + Math.abs(best.z - 1110)
+          ? p
+          : best,
+      this.shore[0],
+    );
+    this.addPath(
+      this.curve([point(90, 262), point(95, 296), point(90, 332)], false),
+      10,
+      "港口路",
+    );
     this.generateProps();
-    this.discoveries = [0.19, 0.39, 0.58, 0.73, 0.88].map((t, i) => ({
-      ...this.pointAt(this.routeLength * t),
+    this.discoveries = [
+      {
+        at: 0.19,
+        name: "橄榄谷地",
+        description: "风穿过果园，山路从这里开始。",
+      },
+      {
+        at: 0.393,
+        name: "松岭之巅",
+        description: "驶过连续弯道，岛屿在脚下展开。",
+      },
+      { at: 0.58, name: "北岬望海", description: "山脊尽头，是另一片海。" },
+      {
+        at: 0.73,
+        name: "晴湾灯塔",
+        description: "沿着灯塔，驶向蓝绿色的海湾。",
+      },
+      {
+        x: this.harbor.x - 22,
+        z: this.harbor.z - 46,
+        yaw: Math.PI,
+        name: "老城码头",
+        description: "彩色老城与停泊的帆船。",
+      },
+    ].map((d, i) => ({
+      ...(d.at !== undefined ? this.pointAt(this.routeLength * d.at) : d),
       id: "vista-" + i,
-      name: ["橄榄谷地", "松岭之巅", "北岬望海", "晴湾灯塔", "棕榈港湾"][i],
-      description: [
-        "风穿过果园，山路从这里开始。",
-        "驶过连续弯道，岛屿在脚下展开。",
-        "山脊尽头，是另一片海。",
-        "沿着灯塔，驶向蓝绿色的海湾。",
-        "彩色老城与停泊的帆船。",
-      ][i],
+      name: d.name,
+      description: d.description,
     }));
   }
   curve(points, closed) {
