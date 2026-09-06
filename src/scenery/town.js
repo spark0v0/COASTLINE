@@ -28,6 +28,7 @@ export function buildTown(S) {
   );
   b.geometries.roof = new THREE.ConeGeometry(1, 1, 4);
   b.geometries.roof.rotateY(Math.PI / 4);
+  const signGeo = new THREE.PlaneGeometry(5.7, 0.8);
   for (const h of w.buildings) {
     const c = Math.cos(h.yaw),
       s = Math.sin(h.yaw),
@@ -203,7 +204,7 @@ export function buildTown(S) {
       box(awning, 0, 2.77, h.d / 2 + 2.1, 6.5, 0.4, 0.1);
       const [sx, sz] = pos(0, h.d / 2 + 0.2);
       mesh(
-        new THREE.PlaneGeometry(5.7, 0.8),
+        signGeo,
         signs[h.variant % 5],
         S.group,
         [sx, y + 4.1, sz],
