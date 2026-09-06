@@ -120,6 +120,16 @@ export function buildRidge(S) {
       z = p.z + rz * 9.2 * side;
     if (w.nearestRoad(x, z).d < 8.6) continue;
     b.box(stone, x, w.height(x, z) - 0.5, z, 0.6, 1.6, 4.2, p.yaw);
+    // Solid stone: the car must not pass through the wall.
+    w.register({
+      type: "box",
+      x,
+      z,
+      w: 0.7,
+      d: 4.2,
+      h: 1.6,
+      yaw: p.yaw,
+    });
   }
   // Ruined watchtower on the cliffs, seaward of the road.
   const tp = w.pointAt(w.routeLength * 0.585),
