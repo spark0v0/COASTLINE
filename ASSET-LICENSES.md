@@ -2,13 +2,27 @@
 
 ## 游戏内容
 
-车辆、建筑、道路、地形、树木、灯塔、码头、标识、海水、噪声纹理、接触阴影、粒子和音效均由当前项目代码生成。
+车辆、建筑、道路、地形、树木、灯塔、码头、标识、海水、接触阴影、粒子和音效由当前项目代码生成。
 
-- 没有下载外部模型、图片、HDR 环境贴图、音乐或音效文件。
-- 本轮新增的灰泥、石材、瓦顶、木材、草地和柏油纹理由 `src/art-materials.js` 本地生成；沿街建筑套件、羽状棕榈、山地树林、灯塔、帆船和教堂由 `src/island-scene.js` 构建，无额外素材授权或在线请求。
+- 表面贴图采用 Poly Haven 的 CC0（公有领域）照片纹理，随项目分发、运行时从本地 `assets/` 加载，无任何在线请求（见下表）。
+- 瓦顶、木材纹理与所有几何模型（建筑套件、羽状棕榈、松树、橄榄树、灯塔、帆船、教堂、拱门、观景台）由 `src/art-materials.js`、`src/island-scene.js` 程序化构建。
 - 没有使用游戏品牌、汽车厂商品牌、商标或真实车型资产。
 - 字体使用操作系统已有字体，不分发字体文件。
 - RoomEnvironment 来自 Three.js 的官方 addons，在内存中生成反射环境，不下载 HDR 文件。
+
+## 表面贴图（Poly Haven，CC0）
+
+| 项目内文件 | 资产 | 来源 | 许可证 | 处理 |
+| --- | --- | --- | --- | --- |
+| `public/assets/surfaces/asphalt_02_diff_1k.jpg` | asphalt_02 | https://polyhaven.com/a/asphalt_02 | CC0 | 原样使用 |
+| `public/assets/surfaces/asphalt_02_nor_gl_1k.jpg` | asphalt_02 | https://polyhaven.com/a/asphalt_02 | CC0 | 原样使用（预留，当前管线未引用） |
+| `public/assets/surfaces/asphalt_02_rough_1k.jpg` | asphalt_02 | https://polyhaven.com/a/asphalt_02 | CC0 | 原样使用 |
+| `public/assets/surfaces/aerial_rocks_02_diff_1k.jpg` | aerial_rocks_02 | https://polyhaven.com/a/aerial_rocks_02 | CC0 | 原样使用 |
+| `public/assets/surfaces/clay_plaster_diff_1k.jpg` | clay_plaster | https://polyhaven.com/a/clay_plaster | CC0 | 原样使用 |
+| `public/assets/surfaces/aerial_grass_rock_diff_1k.jpg` | aerial_grass_rock | https://polyhaven.com/a/aerial_grass_rock | CC0 | 本轮新增下载 |
+| `public/assets/surfaces/aerial_beach_01_diff_1k.jpg` | aerial_beach_01 | https://polyhaven.com/a/aerial_beach_01 | CC0 | 本轮新增下载 |
+
+Poly Haven 许可证说明：https://polyhaven.com/license （CC0：允许任意用途含商业项目与再分发，无需署名）。
 
 ## 运行时依赖
 
