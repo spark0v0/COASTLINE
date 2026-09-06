@@ -1,0 +1,22 @@
+{
+  "name": "coastline-drive",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "海风疾驰 — a compact, offline-capable 3D island driving game",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 8765 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 8765 --strictPort",
+    "test": "node --test tests/*.test.mjs",
+    "start": "node scripts/serve.mjs",
+    "format": "prettier --write src tests scripts index.html styles.css vite.config.js"
+  },
+  "dependencies": {
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "prettier": "3.9.6",
+    "vite": "8.2.2"
+  }
+}

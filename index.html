@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#122c31" />
+    <meta
+      name="description"
+      content="海风疾驰：无需安装、无需联网的轻量 3D 开放世界赛车游戏。"
+    />
+    <title>海风疾驰 · COASTLINE</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%231a3439'/%3E%3Cpath d='M15 40L22 23h23l6 17v9h-9v-6H24v6h-9z' fill='%23d9f76a'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <canvas id="game" aria-label="海风疾驰 3D 驾驶场景"></canvas>
+    <div id="vignette" aria-hidden="true"></div>
+    <div id="boost-lines" aria-hidden="true"></div>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">C<span>∕</span></span>
+        <div>
+          <strong>海风疾驰</strong><small>COASTLINE / OPEN ROADS</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button
+          id="fullscreen-button"
+          class="icon-button"
+          aria-label="切换全屏"
+          title="切换全屏（F）"
+        >
+          ⤢
+        </button>
+        <span class="offline"><i></i> 离线世界 · 单人</span
+        ><button
+          id="settings-button"
+          class="icon-button"
+          aria-label="暂停与设置"
+          title="暂停与设置（Esc）"
+        >
+          Ⅱ
+        </button>
+      </div>
+    </header>
+    <main id="hud">
+      <section class="drive-card glass">
+        <div class="eyebrow"><i></i><span id="mode-label">自由驾驶</span></div>
+        <h2 id="region-label">棕榈港</h2>
+        <p id="objective">沿着海岸线，去发现下一道弯。</p>
+        <button id="race-button" class="small-button">
+          开始环岛计时赛 <span>↗</span>
+        </button>
+        <div id="race-stats" hidden>
+          <div><span>用时</span><b id="race-time">00:00.000</b></div>
+          <div><span>检查点</span><b id="race-progress">0 / 16</b></div>
+          <div class="progress-track"><i id="race-bar"></i></div>
+        </div>
+      </section>
+      <div id="checkpoint-hint" hidden>
+        <small id="turn-hint">沿路线前进</small>
+        <span>下一检查点</span><b id="checkpoint-distance">200 m</b
+        ><i id="checkpoint-arrow">↑</i>
+      </div>
+      <section class="map-card glass">
+        <div class="map-top">
+          <span><i></i> 岛屿导航</span><span id="map-north">N ↑</span>
+        </div>
+        <canvas
+          id="minimap"
+          width="270"
+          height="222"
+          aria-label="岛屿迷你地图：白色为道路，青色为比赛路线，黄色为当前目标"
+        ></canvas>
+        <div class="map-bottom">
+          <span
+            ><i class="map-dot"></i> <span id="map-location">棕榈港</span></span
+          ><span id="distance-travelled">0.0 km</span>
+        </div>
+      </section>
+      <section class="speed-card">
+        <div id="drift-label">手刹漂移</div>
+        <div class="speed-main">
+          <span id="gear">N</span><strong id="speed">000</strong>
+          <div><b>KM/H</b><span id="surface-label">柏油路面</span></div>
+        </div>
+        <div class="speed-scale"><i id="speed-bar"></i></div>
+        <div class="nitro-top">
+          <span>ϟ 氮气加速</span
+          ><span><kbd>SHIFT</kbd> <b id="nitro-value">100%</b></span>
+        </div>
+        <div class="nitro-track"><i id="nitro-bar"></i></div>
+        <div class="speed-footer">
+          <span>APEX / 01</span><span id="quality-label">标准画质</span>
+        </div>
+      </section>
+      <div class="bottom-hints">
+        <span><kbd>W A S D</kbd> / <kbd>↑ ↓ ← →</kbd> 驾驶</span
+        ><span><kbd>空格</kbd> 漂移</span><span><kbd>R</kbd> 回到道路</span
+        ><span><kbd>Esc</kbd> 暂停</span>
+      </div>
+    </main>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <div id="countdown" aria-live="assertive"></div>
+    <div id="modal" class="modal-wrap">
+      <section
+        class="welcome modal-panel"
+        id="welcome-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="welcome-title"
+      >
+        <div class="eyebrow">一座海岛。一辆跑车。随心出发。</div>
+        <h1 id="welcome-title">把日常留在身后。<br /><em>让海风带路。</em></h1>
+        <p class="intro-copy">
+          穿过彩色街区，沿着海岸加速，再驶入山间弯道。<br />没有目的地也没关系，每一条路都通往新风景。
+        </p>
+        <div class="welcome-tags">
+          <span>3D 开放地图</span><span>自由探索</span><span>检查点计时赛</span>
+        </div>
+        <div class="controls-grid">
+          <div><kbd>W / ↑</kbd><span>加速</span></div>
+          <div><kbd>S / ↓</kbd><span>刹车 / 倒车</span></div>
+          <div><kbd>A D / ← →</kbd><span>转向</span></div>
+          <div><kbd>空格</kbd><span>手刹漂移</span></div>
+          <div><kbd>Shift</kbd><span>氮气加速</span></div>
+          <div><kbd>R / Esc</kbd><span>回到道路 / 暂停</span></div>
+        </div>
+        <div class="welcome-actions">
+          <button id="play-button" class="primary">
+            出发，自由驾驶 <span>↗</span></button
+          ><button id="welcome-race" class="secondary">挑战计时赛</button>
+        </div>
+        <p class="footnote">
+          入弯前减速，短按空格甩尾，出弯再加氮气。<br />APEX S1 · 晴湾群岛 ·
+          点击出发后开启音效 · F 全屏
+        </p>
+      </section>
+      <section
+        id="pause-panel"
+        class="modal-panel compact"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pause-title"
+        hidden
+      >
+        <div class="eyebrow">TAKE A BREATH</div>
+        <h1 id="pause-title">停靠片刻</h1>
+        <p id="pause-copy">引擎休息一下，海风继续吹。</p>
+        <label class="setting"
+          ><span>画质<small>低画质限制为 30 帧，减少渲染距离与烟雾</small></span
+          ><select id="quality-select">
+            <option value="standard">标准 · 60 帧</option>
+            <option value="low">低画质 · 30 帧</option>
+          </select></label
+        >
+        <label class="setting"
+          ><span>游戏音效<small>程序合成引擎、轮胎与氮气声</small></span
+          ><input id="sound-toggle" type="checkbox" checked role="switch"
+        /></label>
+        <div class="pause-controls">
+          <span><kbd>WASD / 方向键</kbd> 驾驶</span
+          ><span><kbd>空格</kbd> 漂移</span><span><kbd>Shift</kbd> 氮气</span
+          ><span><kbd>R</kbd> 回到道路</span>
+        </div>
+        <button id="resume-button" class="primary full">
+          继续驾驶 <span>→</span>
+        </button>
+        <div class="button-row">
+          <button id="restart-button" class="secondary">重新挑战</button
+          ><button id="free-button" class="secondary">自由驾驶</button>
+        </div>
+        <button id="help-button" class="text-button">查看首次操作说明</button>
+      </section>
+      <section
+        id="result-panel"
+        class="modal-panel compact"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="result-title"
+        hidden
+      >
+        <div class="eyebrow">COASTLINE / FINISH</div>
+        <div class="finish-icon">⚑</div>
+        <h1 id="result-title">漂亮地冲线。</h1>
+        <p>环岛计时赛 · 所有检查点已通过</p>
+        <div class="result-time" id="result-time">01:30.000</div>
+        <div class="result-grid">
+          <div><span>个人最佳</span><b id="best-time">—</b></div>
+          <div><span>最高车速</span><b id="result-speed">—</b></div>
+          <div><span>重置罚时</span><b id="result-penalty">—</b></div>
+        </div>
+        <p id="record-label"></p>
+        <button id="retry-button" class="primary full">
+          再挑战一次 <span>↻</span></button
+        ><button id="explore-button" class="secondary full">
+          继续自由探索
+        </button>
+      </section>
+    </div>
+    <div id="fatal" role="alert" hidden>
+      <h1>暂时无法启动 3D 场景</h1>
+      <p id="fatal-message"></p>
+      <p>请使用支持 WebGL 的桌面浏览器。游戏不需要安装任何插件。</p>
+    </div>
+    <noscript>这款游戏需要浏览器启用 JavaScript。</noscript>
+  </body>
+</html>
