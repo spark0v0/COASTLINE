@@ -3,6 +3,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { IslandScenery as Scenery } from "./island-scene.js";
 import { VehicleView } from "./vehicle.js";
 import { damp, clamp } from "./math.js";
+import { cameraLimit } from "./camera-collision.js";
 
 export class GameRenderer {
   constructor(canvas, world) {
@@ -187,32 +188,8 @@ export class GameRenderer {
     this.resize();
   }
   cameraOcclusion(eye, target) {
-    const ground = this.world.height(eye.x, eye.z) + 1.0;
-    eye.y = Math.max(eye.y, ground);
-    const delta = eye.clone().sub(target);
-    for (let i = 1; i <= 20; i++) {
-      const t = i / 20,
-        x = target.x + delta.x * t,
-        z = target.z + delta.z * t,
-        y = target.y + delta.y * t;
-      for (const o of this.world.grid.get(
-        Math.floor(x / 24) + "," + Math.floor(z / 24),
-      ) || []) {
-        const c = Math.cos(o.yaw || 0),
-          s = Math.sin(o.yaw || 0);
-        const localX = (x - o.x) * c + (z - o.z) * s,
-          localZ = -(x - o.x) * s + (z - o.z) * c;
-        if (
-          o.type === "box" &&
-          o.w > 5 &&
-          y < this.world.height(o.x, o.z) + o.h + 0.6 &&
-          Math.abs(localX) < o.w / 2 + 0.65 &&
-          Math.abs(localZ) < o.d / 2 + 0.65
-        )
-          return target.clone().addScaledVector(delta, Math.max(0.18, t - 0.1));
-      }
-    }
-    return eye;
+    eye.y = Math.max(eye.y, this.world.height(eye.x, eye.z) + 1);
+    return eye.lerpVectors(target, eye, cameraLimit(this.world, eye, target));
   }
   render(car, race, mode, dt, time, snap = false) {
     const fx = Math.sin(car.yaw),
@@ -255,12 +232,14 @@ export class GameRenderer {
       target.x += Math.cos(car.yaw) * anticipation;
       target.z += Math.sin(car.yaw) * anticipation;
     }
-    eye = this.cameraOcclusion(eye, target);
+    // Clip from the car, since the look-ahead target can lie inside a wall.
+    const anchor = new THREE.Vector3(car.x, car.y + 1.15, car.z);
+    eye = this.cameraOcclusion(eye, anchor);
     const follow = snap ? 1 : 1 - Math.exp(-5.8 * dt);
     this.camera.position.lerp(eye, follow);
     // Smoothing must not carry the camera through terrain or a building.
     this.camera.position.copy(
-      this.cameraOcclusion(this.camera.position.clone(), target),
+      this.cameraOcclusion(this.camera.position.clone(), anchor),
     );
     this.look.lerp(target, snap ? 1 : 1 - Math.exp(-9 * dt));
     this.camera.lookAt(this.look);

@@ -36,6 +36,15 @@ export class Batch {
     this.meshes = [];
     this.buckets = new Map();
     this.materials = new Map();
+    this.batchMaterials = new Map();
+    this.lodGeometries = {
+      sphere: [
+        new THREE.IcosahedronGeometry(1, 1),
+        new THREE.IcosahedronGeometry(1, 0),
+      ],
+      cylinder: [new THREE.CylinderGeometry(0.83, 1, 1, 6)],
+      cone: [new THREE.ConeGeometry(1, 1, 5)],
+    };
     this.geometries = {
       box: new THREE.BoxGeometry(1, 1, 1),
       cylinder: new THREE.CylinderGeometry(0.83, 1, 1, 12),
@@ -55,22 +64,53 @@ export class Batch {
     return this.materials.get(key);
   }
   add(kind, color, pos, size, rotation = [0, 0, 0], shadow = true) {
-    const mat = typeof color === "string" ? this.material(color) : color,
-      key =
-        kind +
+    const source = typeof color === "string" ? this.material(color) : color;
+    const tintable =
+      typeof color === "string" || !!source.userData.instanceTint;
+    let mat = source;
+    if (tintable) {
+      const signature =
+        (source.userData.instanceTint || "solid") +
         ":" +
-        mat.uuid +
+        source.side +
         ":" +
-        shadow +
+        source.roughness +
         ":" +
-        Math.floor(pos[0] / 180) +
+        source.metalness +
         ":" +
-        Math.floor(pos[2] / 180);
+        source.transparent +
+        ":" +
+        source.opacity +
+        ":" +
+        source.vertexColors +
+        ":" +
+        source.depthWrite;
+      if (!this.batchMaterials.has(signature)) {
+        const shared = source.clone();
+        shared.color.set("#ffffff");
+        shared.onBeforeCompile = source.onBeforeCompile;
+        shared.customProgramCacheKey = source.customProgramCacheKey;
+        this.batchMaterials.set(signature, shared);
+      }
+      mat = this.batchMaterials.get(signature);
+    }
+    const key =
+      kind +
+      ":" +
+      mat.uuid +
+      ":" +
+      shadow +
+      ":" +
+      Math.floor(pos[0] / 180) +
+      ":" +
+      Math.floor(pos[2] / 180);
     if (!this.buckets.has(key))
       this.buckets.set(key, {
         geo: this.geometries[kind],
         mat,
         matrices: [],
+        colors: [],
+        kind,
         shadow,
         center: {
           x: (Math.floor(pos[0] / 180) + 0.5) * 180,
@@ -82,6 +122,7 @@ export class Batch {
     this.object.rotation.set(...rotation);
     this.object.updateMatrix();
     this.buckets.get(key).matrices.push(this.object.matrix.clone());
+    this.buckets.get(key).colors.push(tintable ? source.color.clone() : null);
   }
   box(color, x, y, z, w, h, d, yaw = 0, shadow = true) {
     this.add("box", color, [x, y + h / 2, z], [w, h, d], [0, -yaw, 0], shadow);
@@ -90,11 +131,14 @@ export class Batch {
     for (const b of this.buckets.values()) {
       const m = new THREE.InstancedMesh(b.geo, b.mat, b.matrices.length);
       b.matrices.forEach((mat, i) => m.setMatrixAt(i, mat));
+      if (b.colors[0]) b.colors.forEach((color, i) => m.setColorAt(i, color));
       m.castShadow = b.shadow;
       m.receiveShadow = true;
       m.computeBoundingSphere();
       m.userData.optionalDetail = !b.shadow && b.geo === this.geometries.box;
       m.userData.center = b.center;
+      m.userData.fullGeometry = b.geo;
+      m.userData.lod = this.lodGeometries[b.kind];
       this.parent.add(m);
       this.meshes.push(m);
     }
@@ -104,13 +148,21 @@ export class Batch {
     const limit = low ? 700 : 1500;
     for (const m of this.meshes) {
       const p = m.userData.center;
+      const d2 = (p.x - x) ** 2 + (p.z - z) ** 2;
       m.visible =
-        Math.hypot(p.x - x, p.z - z) < limit &&
-        !(
-          low &&
-          m.userData.optionalDetail &&
-          Math.hypot(p.x - x, p.z - z) > 220
-        );
+        d2 < limit * limit &&
+        !(low && m.userData.optionalDetail && d2 > 220 * 220);
+      if (m.visible && m.userData.lod) {
+        const near = low ? 130 : 320,
+          far = low ? 340 : 750;
+        const levels = m.userData.lod;
+        m.geometry =
+          d2 > far * far
+            ? levels.at(-1)
+            : d2 > near * near
+              ? levels[0]
+              : m.userData.fullGeometry;
+      }
     }
   }
 }

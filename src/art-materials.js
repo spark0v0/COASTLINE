@@ -155,7 +155,7 @@ export class ArtMaterials {
       );
       shader.fragmentShader = shader.fragmentShader.replace(
         "#include <roughnessmap_fragment>",
-        `#include <roughnessmap_fragment>
+        `float roughnessFactor = roughness;
         #ifdef USE_ROUGHNESSMAP
           vec3 rWeights=pow(abs(normalize(vArtNormal)),vec3(6.0));rWeights/=max(dot(rWeights,vec3(1.0)),.001);
           vec3 rP=vArtWorld*artScale;
@@ -166,6 +166,9 @@ export class ArtMaterials {
       );
     };
     material.customProgramCacheKey = () => kind + scale + strength;
+    // The kit may share this shader across colours using instance tints.
+    material.userData.instanceTint =
+      "surface:" + kind + ":" + scale + ":" + strength;
     this.materials.set(key, material);
     return material;
   }
