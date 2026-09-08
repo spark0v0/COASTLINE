@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { rng } from "./math.js";
+import { addSurfaceRelief } from "./surface-detail.js";
 
 // Shared surface materials. Photo-based CC0 textures (Poly Haven) drive the
 // big surfaces; world-space triplanar projection keeps every kit piece at
@@ -155,6 +156,7 @@ export class ArtMaterials {
         vec3 weights=pow(abs(normalize(vArtNormal)),vec3(6.0));weights/=max(dot(weights,vec3(1.0)),.001);
         vec3 p=vArtWorld*artScale;
         vec4 texel=texture2D(map,p.zy)*weights.x+texture2D(map,p.xz)*weights.y+texture2D(map,p.xy)*weights.z;
+        float artGrain=dot(texel.rgb,vec3(.2126,.7152,.0722));
         diffuseColor.rgb*=mix(vec3(1.0),texel.rgb,artStrength);
       `,
       );
@@ -175,8 +177,21 @@ export class ArtMaterials {
         #endif
       `,
       );
+      addSurfaceRelief(
+        shader,
+        "artGrain",
+        {
+          stone: 0.016,
+          limestone: 0.003,
+          stucco: 0.004,
+          wood: 0.004,
+          paving: 0.006,
+          asphalt: 0.003,
+        }[kind] || 0.002,
+      );
     };
-    material.customProgramCacheKey = () => kind + scale + strength;
+    material.customProgramCacheKey = () =>
+      kind + scale + strength + ":relief-v2";
     // The kit may share this shader across colours using instance tints.
     material.userData.instanceTint =
       "surface:" + kind + ":" + scale + ":" + strength;

@@ -4,6 +4,7 @@ export class Car {
   constructor(world) {
     this.world = world;
     this.nitro = 100;
+    this.infiniteNitro = false;
     this.distance = 0;
     this.topSpeed = 0;
     this.nitroLocked = false;
@@ -55,12 +56,18 @@ export class Car {
     // Sand (the beach band near the shoreline) is soft but fast; grass is slow.
     const sand =
       this.offroad &&
-      this.world.shoreRim(this.x / this.world.scale, this.z / this.world.scale) >
-        0.88;
+      this.world.shoreRim(
+        this.x / this.world.scale,
+        this.z / this.world.scale,
+      ) > 0.88;
     this.sand = sand;
     const speed = Math.abs(forward),
       throttle = input.throttle ? 1 : 0,
       brake = input.brake ? 1 : 0;
+    if (this.infiniteNitro) {
+      this.nitro = 100;
+      this.nitroLocked = false;
+    }
     if (!input.nitro || this.nitro > 18) this.nitroLocked = false;
     this.boost = !!(
       input.nitro &&
@@ -69,12 +76,14 @@ export class Car {
       this.nitro > 0 &&
       !this.nitroLocked
     );
-    this.nitro = clamp(
-      this.nitro +
-        (this.boost ? -24 : input.handbrake && speed > 10 ? 12 : 8) * dt,
-      0,
-      100,
-    );
+    this.nitro = this.infiniteNitro
+      ? 100
+      : clamp(
+          this.nitro +
+            (this.boost ? -24 : input.handbrake && speed > 10 ? 12 : 8) * dt,
+          0,
+          100,
+        );
     if (this.nitro === 0) this.nitroLocked = true;
     let acceleration = 0;
     if (throttle)

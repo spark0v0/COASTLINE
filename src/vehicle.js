@@ -12,7 +12,7 @@ export class VehicleView {
     const paint = new THREE.MeshPhysicalMaterial({
       color: "#267c8b",
       metalness: 0.66,
-      roughness: 0.23,
+      roughness: 0.2,
       clearcoat: 1,
       clearcoatRoughness: 0.12,
       envMapIntensity: 1.25,
@@ -24,10 +24,10 @@ export class VehicleView {
     });
     const glass = new THREE.MeshPhysicalMaterial({
       color: "#153b49",
-      metalness: 0.55,
+      metalness: 0.28,
       roughness: 0.14,
       clearcoat: 1,
-      envMapIntensity: 1.9,
+      envMapIntensity: 1.3,
     });
     const rubber = new THREE.MeshStandardMaterial({
       color: "#172025",
@@ -186,9 +186,15 @@ export class VehicleView {
     box(0, 0.31, -2.14, 1.82, 0.065, 0.42, dark);
     // Front splitter lip.
     box(0, 0.13, -2.24, 1.6, 0.07, 0.3, dark);
-    box(0, 0.4, 2.345, 1.57, 0.23, 0.045, dark);
-    for (let i = -3; i <= 3; i++)
-      box(i * 0.19, 0.235, 2.24, 0.025, 0.16, 0.37, dark);
+    // A narrow recessed rear grille and lower valance, framed by the body.
+    box(0, 0.43, 2.347, 1.37, 0.105, 0.025, dark);
+    box(0, 0.29, 2.3, 1.57, 0.065, 0.2, dark);
+    for (const side of [-1, 1])
+      box(side * 0.76, 0.39, 2.31, 0.17, 0.2, 0.11, paint);
+    for (let i = -5; i <= 5; i++)
+      box(i * 0.113, 0.43, 2.363, 0.018, 0.079, 0.008, alloy);
+    for (let i = -2; i <= 2; i++)
+      box(i * 0.24, 0.23, 2.2, 0.023, 0.1, 0.28, dark);
     // Twin exhaust tips.
     for (const s of [-1, 1])
       mesh(
@@ -199,32 +205,47 @@ export class VehicleView {
         [Math.PI / 2, 0, 0],
       );
     // Integrated trailing edge: a low ducktail, without oversized wing pylons.
-    box(0, 0.88, 2.03, 1.85, 0.07, 0.27, paint, [-0.08, 0, 0]);
+    box(0, 0.87, 2.04, 1.74, 0.045, 0.2, paint, [-0.08, 0, 0]);
     this.brakeMat = new THREE.MeshStandardMaterial({
       color: "#b32823",
       emissive: "#ff3325",
       emissiveIntensity: 0.85,
       roughness: 0.28,
     });
-    box(0, 0.7, 2.35, 1.61, 0.038, 0.025, this.brakeMat);
+    box(0, 0.7, 2.35, 1.62, 0.068, 0.022, dark);
+    box(0, 0.705, 2.365, 1.57, 0.024, 0.014, this.brakeMat);
     box(0, 0.62, 2.365, 0.24, 0.018, 0.02, alloy);
     const plate = new THREE.MeshBasicMaterial({
-      map: textTexture("APEX · 01", {
+      map: textTexture("COAST / 01", {
         bg: "#dddac5",
         fg: "#20333b",
         size: 256,
       }),
     });
-    mesh(new THREE.PlaneGeometry(0.55, 0.18), plate, body, [0, 0.51, 2.373]);
+    mesh(new THREE.PlaneGeometry(0.43, 0.115), plate, body, [0, 0.51, 2.373]);
     this.wheels = [];
-    for (const x of [-1.035, 1.035])
+    for (const x of [-0.99, 0.99])
       for (const z of [-1.37, 1.37]) {
         const steer = new THREE.Group();
         steer.position.set(x, 0.37, z);
         this.root.add(steer);
         const wheel = new THREE.Group();
         steer.add(wheel);
-        const tireGeo = new THREE.CylinderGeometry(0.37, 0.37, 0.255, 40, 1);
+        const tireGeo = new THREE.LatheGeometry(
+          [
+            [0, -0.105],
+            [0.26, -0.125],
+            [0.325, -0.12],
+            [0.363, -0.078],
+            [0.37, -0.034],
+            [0.37, 0.034],
+            [0.363, 0.078],
+            [0.325, 0.12],
+            [0.26, 0.125],
+            [0, 0.105],
+          ].map(([r, y]) => new THREE.Vector2(r, y)),
+          40,
+        );
         tireGeo.rotateZ(Math.PI / 2);
         mesh(tireGeo, rubber, wheel);
         const rimGeo = new THREE.CylinderGeometry(0.266, 0.266, 0.266, 40, 1);
@@ -268,6 +289,14 @@ export class VehicleView {
           wheel,
           [0, 0, 0],
           [0, 0, Math.PI / 2],
+        );
+        // A fine sidewall ring catches light independently of the wheel face.
+        mesh(
+          new THREE.TorusGeometry(0.322, 0.009, 6, 32),
+          rubber,
+          wheel,
+          [side * 0.127, 0, 0],
+          [0, Math.PI / 2, 0],
         );
         this.wheels.push({ steer, wheel, front: z < 0 });
       }

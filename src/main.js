@@ -39,7 +39,12 @@ class Game {
     this.steps = 0;
     this.draws = 0;
     this.onUpdate = null;
-    this.settings = { quality: "standard", sound: true, volume: 0.7 };
+    this.settings = {
+      quality: "standard",
+      sound: true,
+      volume: 0.7,
+      infiniteNitro: false,
+    };
     try {
       const settings = JSON.parse(
         localStorage.getItem("coastline.preferences") || "null",
@@ -47,6 +52,7 @@ class Game {
       if (settings) {
         this.settings.quality = settings.quality === "low" ? "low" : "standard";
         this.settings.sound = settings.sound !== false;
+        this.settings.infiniteNitro = settings.infiniteNitro === true;
         this.settings.volume = Number.isFinite(settings.volume)
           ? Math.max(0, Math.min(1, settings.volume))
           : 0.7;
@@ -65,6 +71,8 @@ class Game {
     this.effects.low = this.settings.quality === "low";
     $("quality-select").value = this.settings.quality;
     $("sound-toggle").checked = this.settings.sound;
+    this.car.infiniteNitro = this.settings.infiniteNitro;
+    $("infinite-nitro-toggle").checked = this.settings.infiniteNitro;
     $("volume-slider").value = Math.round(this.settings.volume * 100);
     $("island-size").textContent =
       (this.world.routeLength / 1000).toFixed(1) + " km 环岛公路";
@@ -149,6 +157,7 @@ class Game {
     this.car.nitro = 100;
     this.car.nitroLocked = false;
     this.race.start();
+    this.raceAssisted = this.settings.infiniteNitro;
     this.raceTopSpeed = 0;
     this.countLast = -1;
     this.snap = true;
@@ -229,7 +238,8 @@ class Game {
   }
   finish() {
     const r = this.race,
-      record = this.best === null || r.elapsed < this.best;
+      record =
+        !this.raceAssisted && (this.best === null || r.elapsed < this.best);
     if (record) {
       this.best = r.elapsed;
       try {
@@ -240,7 +250,7 @@ class Game {
       } catch {}
     }
     const medal = this.medalRank(r.elapsed);
-    if (medal > 0) {
+    if (medal > 0 && !this.raceAssisted) {
       try {
         const key = "coastline.medal.v1." + this.selectedEvent.id;
         if (medal > (Number(localStorage.getItem(key)) || 0))
@@ -256,9 +266,11 @@ class Game {
     ];
     $("result-route").textContent =
       this.selectedEvent.name + " · 所有检查点已通过";
-    $("record-label").textContent = record
-      ? "新个人纪录 · 把这一圈留给海风。"
-      : "挑战完成。再次出发，刷新自己的纪录。";
+    $("record-label").textContent = this.raceAssisted
+      ? "无限氮气挑战完成 · 本次不计入普通纪录"
+      : record
+        ? "新个人纪录 · 把这一圈留给海风。"
+        : "挑战完成。再次出发，刷新自己的纪录。";
     this.panel("result");
     this.scriptedDriver = null;
   }
@@ -337,6 +349,18 @@ class Game {
     $("explore-button").onclick = () => this.freeDrive();
     $("help-button").onclick = () => this.panel("help");
     $("quality-select").onchange = (e) => this.setQuality(e.target.value);
+    $("infinite-nitro-toggle").onchange = (e) => {
+      const enabled = e.target.checked;
+      this.settings.infiniteNitro = enabled;
+      this.car.infiniteNitro = enabled;
+      if (enabled) {
+        this.car.nitro = 100;
+        this.car.nitroLocked = false;
+        if (this.activeRace()) this.raceAssisted = true;
+      }
+      this.saveSettings();
+      this.updateHUD();
+    };
     $("volume-slider").oninput = (e) => {
       this.settings.volume = Number(e.target.value) / 100;
       this.audio.volume = this.settings.volume;
@@ -456,6 +480,18 @@ class Game {
     ctx.strokeStyle = "#a5ac85";
     ctx.lineWidth = 1;
     ctx.stroke();
+    if (this.world.lake) {
+      ctx.beginPath();
+      this.world.lake.shore.forEach((p, i) => {
+        const q = this.mapPoint(p.x, p.z);
+        i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y);
+      });
+      ctx.closePath();
+      ctx.fillStyle = "#579eae";
+      ctx.fill();
+      ctx.strokeStyle = "#b1cfb3";
+      ctx.stroke();
+    }
     for (const path of this.world.paths) {
       ctx.beginPath();
       path.points.forEach((p, i) => {
@@ -527,6 +563,28 @@ class Game {
         ctx.arc(q.x, q.y, 3, 0, Math.PI * 2);
         ctx.fill();
       }
+    if (!this.activeRace()) {
+      const colors = {
+        cafe: "#e9a788",
+        surf: "#80c7d0",
+        market: "#e4c782",
+        transit: "#b5c8ce",
+        service: "#a6bd8b",
+        view: "#e5d9b6",
+        tennis: "#92ccc2",
+        orchard: "#d3b77c",
+        allotment: "#b8c98c",
+        park: "#afc4b6",
+      };
+      for (const place of [
+        ...(this.world.places || []),
+        ...(this.world.openSpaces || []),
+      ]) {
+        const q = this.mapPoint(place.x, place.z);
+        ctx.fillStyle = colors[place.kind];
+        ctx.fillRect(q.x - 1.8, q.y - 1.8, 3.6, 3.6);
+      }
+    }
     const p = this.mapPoint(this.car.x, this.car.z);
     ctx.save();
     ctx.translate(p.x, p.y);
@@ -553,7 +611,9 @@ class Game {
       "0",
     );
     $("speed-bar").style.width = Math.min(100, (car.speed / 78) * 100) + "%";
-    $("nitro-value").textContent = Math.round(car.nitro) + "%";
+    $("nitro-value").textContent = this.settings.infiniteNitro
+      ? "∞ 无限"
+      : Math.round(car.nitro) + "%";
     $("nitro-bar").style.width = car.nitro + "%";
     $("gear").textContent =
       car.forwardSpeed < -0.3
@@ -564,6 +624,32 @@ class Game {
     const region = this.world.region(car.x, car.z);
     $("region-label").textContent = region;
     $("map-location").textContent = region;
+    if (this.mode === "play" && !this.activeRace()) {
+      let nearby = null,
+        nearest = 90;
+      for (const place of [
+        ...(this.world.places || []),
+        ...(this.world.openSpaces || []),
+      ]) {
+        const d = distance(car, place);
+        if (d < nearest) {
+          nearby = place;
+          nearest = d;
+        }
+      }
+      if (nearby) {
+        $("map-location").textContent = nearby.name;
+        this.visitedPlaces ||= new Set();
+        if (
+          nearest < 55 &&
+          !this.visitedPlaces.has(nearby.name) &&
+          now > this.toastUntil
+        ) {
+          this.visitedPlaces.add(nearby.name);
+          this.toast("途经 " + nearby.name + " · 海岛慢游");
+        }
+      }
+    }
     $("discovery-count").textContent =
       this.discovered.size + " / " + this.world.discoveries.length + " 风景";
     if (this.mode === "play" && !this.activeRace()) {

@@ -1,4 +1,5 @@
 import { THREE, geometryFromTriangles, mesh, rng } from "./kit.js";
+import { buildSailboat } from "./marina-models.js";
 
 // Lighthouse, marina, coastal planting and the beach leisure strip.
 export function buildCoast(S) {
@@ -79,25 +80,7 @@ export function buildCoast(S) {
     const xx = hx + 5 + i * 11,
       zz = hz + 71;
     b.box(wood, xx, 0.2, zz - 2, 2, 0.65, 27);
-    b.add(
-      "sphere",
-      "#e9e0c7",
-      [xx + 4, 0.05, zz],
-      [2.1, 0.85, 6],
-      [0, 0.12, 0],
-    );
-    b.box("#d8ccb0", xx + 4, 0.45, zz, 2.7, 0.9, 5);
-    b.box("#365563", xx + 4, 1.32, zz, 2.45, 0.55, 3.4);
-    b.add("cylinder", "#d4d3bc", [xx + 4, 6, zz], [0.07, 11, 0.07]);
-    const sail = [xx + 4, 11, zz, xx + 4, 2, zz, xx + 8, 2, zz];
-    mesh(
-      geometryFromTriangles(sail),
-      new THREE.MeshStandardMaterial({
-        color: "#eee7cb",
-        side: THREE.DoubleSide,
-      }),
-      S.group,
-    );
+    buildSailboat(S, xx + 4, zz, i);
   }
   // Low roadside planting and street lamps keep the coastal sightline clear.
   const route = w.route;

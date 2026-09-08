@@ -4,6 +4,7 @@ import { IslandScenery as Scenery } from "./island-scene.js";
 import { VehicleView } from "./vehicle.js";
 import { damp, clamp } from "./math.js";
 import { cameraLimit } from "./camera-collision.js";
+import { SUN_DIRECTION, DAYLIGHT } from "./daylight.js";
 
 export class GameRenderer {
   constructor(canvas, world) {
@@ -25,39 +26,52 @@ export class GameRenderer {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene = new THREE.Scene();
     // Warm coastal sunlight with neutral whites and a cool atmospheric fill.
-    this.scene.fog = new THREE.FogExp2("#c2d5df", 0.00066);
+    this.scene.fog = new THREE.FogExp2(DAYLIGHT.horizon, 0.00059);
     this.camera = new THREE.PerspectiveCamera(57, 1, 0.18, 8000);
     this.camera.position.set(world.spawn.x + 12, 8, world.spawn.z - 12);
     this.look = new THREE.Vector3(world.spawn.x, 3, world.spawn.z);
-    this.scene.add(new THREE.HemisphereLight("#c9dff2", "#8f8066", 1.05));
-    this.sun = new THREE.DirectionalLight("#ffe2bc", 2.9);
+    this.scene.add(
+      new THREE.HemisphereLight(
+        DAYLIGHT.fill,
+        DAYLIGHT.ground,
+        DAYLIGHT.fillIntensity,
+      ),
+    );
+    this.sun = new THREE.DirectionalLight(DAYLIGHT.sun, DAYLIGHT.sunIntensity);
     this.sun.position.set(-90, 140, 65);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
     Object.assign(this.sun.shadow.camera, {
-      left: -80,
-      right: 80,
-      top: 80,
-      bottom: -80,
+      left: -68,
+      right: 68,
+      top: 68,
+      bottom: -68,
       near: 1,
-      far: 360,
+      far: 420,
     });
     this.sun.shadow.bias = -0.00022;
-    this.sun.shadow.normalBias = 0.035;
+    this.sun.shadow.normalBias = 0.025;
     this.sun.shadow.radius = 3.5;
     this.scene.add(this.sun, this.sun.target);
+    this.shadowRight = new THREE.Vector3()
+      .crossVectors(new THREE.Vector3(0, 1, 0), SUN_DIRECTION)
+      .normalize();
+    this.shadowUp = new THREE.Vector3()
+      .crossVectors(SUN_DIRECTION, this.shadowRight)
+      .normalize();
+    this.shadowCenter = new THREE.Vector3();
     this.environment = outdoorEnvironment(this.renderer);
     this.scene.environment = this.environment.texture;
-    this.scene.environmentIntensity = 0.7;
+    this.scene.environmentIntensity = DAYLIGHT.environmentIntensity;
     const sky = new THREE.Mesh(
       new THREE.SphereGeometry(6500, 32, 16),
       new THREE.ShaderMaterial({
         side: THREE.BackSide,
         depthWrite: false,
         uniforms: {
-          top: { value: new THREE.Color("#3987c2") },
-          bottom: { value: new THREE.Color("#c2ddeb") },
-          sun: { value: new THREE.Vector3(-0.7, 0.54, 0.47).normalize() },
+          top: { value: new THREE.Color(DAYLIGHT.skyTop) },
+          bottom: { value: new THREE.Color(DAYLIGHT.horizon) },
+          sun: { value: SUN_DIRECTION.clone() },
         },
         vertexShader:
           "varying vec3 vPosition;void main(){vPosition=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
@@ -179,7 +193,7 @@ export class GameRenderer {
     this.sun.shadow.mapSize.set(low ? 1024 : 2048, low ? 1024 : 2048);
     this.sun.shadow.map?.dispose();
     this.sun.shadow.map = null;
-    this.scene.fog.density = low ? 0.0014 : 0.00066;
+    this.scene.fog.density = low ? 0.0014 : 0.00059;
     this.scenery.setQuality(low);
     this.resize();
   }
@@ -246,11 +260,20 @@ export class GameRenderer {
       dt,
     );
     this.camera.updateProjectionMatrix();
-    const sx = Math.round(car.x / 2) * 2,
-      sz = Math.round(car.z / 2) * 2;
-    this.sun.target.position.set(sx, car.y, sz);
-    // Sun kept low in the west for long golden-hour shadows.
-    this.sun.position.set(sx - 84, car.y + 64, sz + 56);
+    // Snap in the light's image plane, not in 2m world steps: stable small details.
+    this.shadowCenter.set(car.x + fx * 18, car.y, car.z + fz * 18);
+    const texel = 136 / this.sun.shadow.mapSize.x;
+    for (const axis of [this.shadowRight, this.shadowUp]) {
+      const projected = this.shadowCenter.dot(axis);
+      this.shadowCenter.addScaledVector(
+        axis,
+        Math.round(projected / texel) * texel - projected,
+      );
+    }
+    this.sun.target.position.copy(this.shadowCenter);
+    this.sun.position
+      .copy(this.shadowCenter)
+      .addScaledVector(SUN_DIRECTION, 190);
     this.sky.position.copy(this.camera.position);
     this.clouds.position.copy(this.camera.position);
     this.vehicle.update(car, time);

@@ -1,5 +1,6 @@
 import { THREE, textTexture, mesh } from "./kit.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { buildVilla } from "./villa-models.js";
 
 // A shared architectural language, built inside the existing collision plots.
 // Slabs, recessed glazing and occupied terraces replace decorated solid cubes.
@@ -37,6 +38,10 @@ export function buildModernArchitecture(S) {
       }),
   );
   for (const h of w.buildings) {
+    if (h.variant % 4 === 0 || h.variant % 4 === 3) {
+      buildVilla(S, h);
+      continue;
+    }
     const y = w.height(h.x, h.z),
       c = Math.cos(h.yaw),
       s = Math.sin(h.yaw);
@@ -61,7 +66,10 @@ export function buildModernArchitecture(S) {
         [ww, hh, dd],
         [0, -h.yaw, 0],
       );
-    const floors = Math.max(2, Math.min(4, Math.round(h.h / 3.25)));
+    h.residential = h.variant % 4 === 0 || h.variant % 4 === 3;
+    const floors = h.residential
+      ? 2
+      : Math.max(2, Math.min(4, Math.round(h.h / 3.25)));
     const variant = h.variant % 4,
       level = 3.25;
     h.h = floors * level + 0.72;
@@ -138,6 +146,50 @@ export function buildModernArchitecture(S) {
         0.12,
         false,
       );
+      // Residential wings have opaque walls and framed windows; hotels retain
+      // the wider glass bands. All balconies remain genuinely open.
+      if (h.residential) {
+        const plaster = S.art.get(
+          "stucco",
+          variant === 0 ? "#e5dfcf" : "#ccbda7",
+        );
+        for (const zz of [front + 0.16, back - 0.12]) {
+          box(plaster, 0, yy + 0.27, zz, ww - 0.5, 0.7, 0.16);
+          box(plaster, 0, yy + 2.5, zz, ww - 0.5, 0.47, 0.16);
+          for (let j = -2; j <= 2; j++)
+            box(plaster, j * ww * 0.19, yy + 0.96, zz, ww * 0.06, 1.54, 0.17);
+        }
+        for (const side of [-1, 1]) {
+          box(
+            plaster,
+            side * (ww / 2 - 0.18),
+            yy + 0.27,
+            -0.1,
+            0.16,
+            0.7,
+            dd - 1.35,
+          );
+          box(
+            plaster,
+            side * (ww / 2 - 0.18),
+            yy + 2.5,
+            -0.1,
+            0.16,
+            0.47,
+            dd - 1.35,
+          );
+          for (let j = -1; j <= 1; j++)
+            box(
+              plaster,
+              side * (ww / 2 - 0.17),
+              yy + 0.96,
+              j * dd * 0.26,
+              0.18,
+              1.54,
+              dd * 0.095,
+            );
+        }
+      }
       // A solid timber bay interrupts the glass rhythm instead of wallpaper windows.
       const finX = (variant === 1 ? 1 : -1) * ww * 0.33;
       box(timber, finX, yy + 0.25, front + 0.15, ww * 0.23, 2.85, 0.22);
@@ -165,7 +217,7 @@ export function buildModernArchitecture(S) {
             0.045,
             false,
           );
-        box(glazing, 0, yy + 0.43, railZ, ww - 0.7, 0.64, 0.035, false);
+        box(graphite, 0, yy + 0.55, railZ, ww - 0.7, 0.035, 0.035, false);
         // Lower dark panel leaves light between the terrace and railing.
         slab(ww * 0.3, yy + 0.24, dd * 0.32, ww * 0.2, 0.42, 0.66, stone);
         b.add("sphere", "#405d42", p(ww * 0.3, yy + 0.82, dd * 0.32), [
@@ -177,7 +229,7 @@ export function buildModernArchitecture(S) {
         slab(0, yy + 2.9, dd / 2 + 0.14, ww * 0.76, 0.16, 1.35);
         const sign = mesh(
           signGeo,
-          signs[variant],
+          signs[h.residential ? 3 : variant],
           S.group,
           p(0, yy + 2.48, front + 0.38),
           [0, -h.yaw, 0],

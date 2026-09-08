@@ -1,5 +1,6 @@
 import { THREE, quad, geometryFromTriangles, mesh, smooth } from "./kit.js";
 import { landscapeMaterial } from "../landscape-material.js";
+import { SUN_DIRECTION } from "../daylight.js";
 
 // Terrain chunks, shoreline quads and the animated water plane.
 export function buildTerrain(S) {
@@ -132,24 +133,31 @@ export function buildTerrain(S) {
     transparent: true,
     uniforms: {
       time: { value: 0 },
+      sunDirection: { value: SUN_DIRECTION },
       center: { value: center.x },
       radius: { value: new THREE.Vector2(260 * w.scale, 350 * w.scale) },
     },
     vertexShader:
       "varying vec3 vWorld;void main(){vec4 p=modelMatrix*vec4(position,1.);vWorld=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}",
-    fragmentShader: `uniform float time;uniform float center;uniform vec2 radius;varying vec3 vWorld;
+    fragmentShader: `uniform float time;uniform float center;uniform vec2 radius;uniform vec3 sunDirection;varying vec3 vWorld;
       void main(){
         vec2 p=vWorld.xz;
-        vec2 q=abs((p-vec2(center,0.))/radius);
-        float edge=pow(pow(q.x,5.263)+pow(q.y,5.263),1./5.263);
+        vec2 signedQ=(p-vec2(center,0.))/radius;
+        vec2 angular=sign(signedQ)*pow(abs(signedQ),vec2(1./.38));
+        float angle=atan(angular.y,angular.x);
+        float shoreScale=1.+.026*sin(angle*3.+.3)+.016*sin(angle*7.-1.);
+        vec2 q=abs(signedQ)/shoreScale;
+        float edge=pow(pow(q.x,2./.38)+pow(q.y,2./.38),.38/2.);
         float depth=smoothstep(1.,1.38,edge);
         vec3 col=mix(vec3(.09,.56,.5),vec3(.024,.22,.34),depth);
         float a=sin(p.x*.11+time*.8),b=sin(p.y*.14-time*.65);
         vec3 n=normalize(vec3(a*.085,1.,b*.085));
         vec3 view=normalize(cameraPosition-vWorld);
-        vec3 light=normalize(vec3(-.7,.54,.47));
+        vec3 light=sunDirection;
         float spec=pow(max(dot(n,normalize(view+light)),0.),150.);
         float ripple=sin(p.x*.32+sin(p.y*.23)+time)*sin(p.y*.46-time*.7);
+        float fresnel=pow(1.-max(dot(n,view),0.),4.);
+        col=mix(col,vec3(.46,.63,.70),fresnel*.48);
         col+=ripple*.008+spec*vec3(.6,.56,.38)*.4;
         // Breaking foam line pulses back and forth across the waterline.
         float band=smoothstep(.993,1.,edge)*(1.-smoothstep(1.,1.018,edge));

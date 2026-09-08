@@ -16,6 +16,13 @@ import {
   RACE_DEFINITIONS,
 } from "./world-layout.js";
 const point = (x, z) => ({ x, z });
+import {
+  CENTRAL_LAKE,
+  LAKE_SHORE,
+  lakePoint,
+  lakeDistance,
+  lakeTerrain,
+} from "./lake-data.js";
 
 export class WorldData {
   constructor() {
@@ -31,6 +38,7 @@ export class WorldData {
     this.center = ISLAND_CENTER;
     this.bounds = ISLAND_BOUNDS;
     this.regions = REGIONS;
+    this.lake = { ...CENTRAL_LAKE, shore: LAKE_SHORE };
     this.route = this.curve(ROUTE_NODES, true);
     this.addPath(this.route, 15, "环岛公路");
     this.addPath([point(-170, 233), point(122, 233)], 16, "港湾大道");
@@ -38,6 +46,24 @@ export class WorldData {
       this.addPath([point(x, 233), point(x, -40)], 15, "城市街道");
     for (const z of [-40, 65, 170])
       this.addPath([point(-170, z), point(192, z)], 15, "城市街道");
+    const loop = Array.from({ length: 97 }, (_, i) =>
+      lakePoint((i / 96) * Math.PI * 2, 1.28),
+    );
+    this.addPath(
+      loop.map((p) => point(p.x / S, p.z / S)),
+      6,
+      "镜湖环湖路",
+    );
+    const entrance = loop[0];
+    this.addPath(
+      [
+        point(60, 40 / S),
+        point((201 + entrance.x) / (2 * S), 40 / S),
+        point(entrance.x / S, entrance.z / S),
+      ],
+      8,
+      "镜湖入口",
+    );
     this.addPath(
       this.curve(
         [
@@ -126,6 +152,13 @@ export class WorldData {
         yaw: Math.PI,
         name: "老城码头",
         description: "彩色老城与停泊的帆船。",
+      },
+      {
+        x: lakePoint(0, 1.28).x,
+        z: lakePoint(0, 1.28).z,
+        yaw: -Math.PI / 2,
+        name: "镜湖公园",
+        description: "驶入环湖路，在喷泉与树影之间慢下来。",
       },
     ].map((d, i) => ({
       ...(d.at !== undefined ? this.pointAt(this.routeLength * d.at) : d),
@@ -235,7 +268,7 @@ export class WorldData {
     // tall sea cliffs keep their full drop.
     const rim = this.shoreRim(x, z);
     const beach = smooth(0.82, 1.0, rim) * (1 - smooth(6, 14, h));
-    return h * (1 - beach) + -1.4 * beach;
+    return lakeTerrain(x * S, z * S, h * (1 - beach) + -1.4 * beach);
   }
   // Superellipse rim metric: 0 at the centre, 1 on the shoreline.
   shoreRim(x, z) {
@@ -320,6 +353,7 @@ export class WorldData {
       palette = ["#ead4ad", "#e6ad91", "#e8ddc1", "#c6d0b3", "#d4ae80"];
     const clear = (x, z, r) =>
       this.inside(x, z) &&
+      lakeDistance(x, z) > 1.53 + r / this.lake.rz &&
       this.nearestRoad(x, z).d > r + 9 &&
       !this.buildings.some(
         (b) =>
@@ -390,6 +424,7 @@ export class WorldData {
       const x = -1110 + random() * 1880,
         z = -1180 + random() * 2300;
       if (!this.inside(x, z)) continue;
+      if (lakeDistance(x, z) < 1.55) continue;
       const list = this.roadGrid.get(
         Math.floor(x / 32) + "," + Math.floor(z / 32),
       );
@@ -536,7 +571,7 @@ export class WorldData {
             car.impact = Math.max(car.impact, clamp(-into / 14, 0, 1));
           }
         }
-    if (!this.inside(car.x, car.z)) {
+    if (!this.inside(car.x, car.z) || lakeDistance(car.x, car.z) < 0.965) {
       car.reset(this.safeReset(car));
       car.rescued = true;
     }

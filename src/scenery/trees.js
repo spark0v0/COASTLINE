@@ -1,8 +1,10 @@
 import { THREE, geometryFromTriangles, rng } from "./kit.js";
+import { installTreeCrowns } from "./tree-crowns.js";
 
 // Shared irregular crowns and a continuous, tapered palm trunk.
 // No per-tree geometry or textures: the scenery batch retains spatial culling.
 export function buildTrees(S) {
+  installTreeCrowns(S);
   const b = S.batch,
     w = S.world,
     trunk = S.art.get("wood", "#827761");
@@ -84,7 +86,6 @@ export function buildTrees(S) {
       new THREE.IcosahedronGeometry(1, 0),
     ];
   }
-  const leaf = ["#38573f", "#496748", "#5c7453", "#6f8060"];
   const branch = (a, c, r1) => {
     const from = new THREE.Vector3(...a),
       to = new THREE.Vector3(...c),
@@ -140,8 +141,8 @@ export function buildTrees(S) {
       );
       const radius = h * (pine ? 0.205 : 0.155) * (1 + r() * 0.2);
       b.add(
-        "foliage" + (i % 3),
-        leaf[(i + (pine ? 0 : 1)) % 4],
+        "treeCrown" + (i % 3),
+        S.treeLeafMaterials[(i + (pine ? 0 : 1)) % 4],
         [xx, yy, zz],
         [radius * (pine ? 1.25 : 1), radius * (pine ? 0.48 : 0.8), radius],
         [r() * 0.18, angle, r() * 0.1],

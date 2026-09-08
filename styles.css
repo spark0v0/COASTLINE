@@ -557,6 +557,10 @@ kbd {
   margin: 22px 0 0;
 }
 .compact {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   padding: 35px 38px;
   background: #123039f2;
   border: 1px solid #cbe8c332;

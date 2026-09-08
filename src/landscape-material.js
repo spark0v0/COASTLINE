@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { addSurfaceRelief } from "./surface-detail.js";
 
 // Terrain has one colour transform. Grass, dry soil and rock are separate
 // surfaces, rather than three dark colours multiplied into the same photo.
@@ -10,6 +11,7 @@ export function landscapeMaterial(art) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.landRock = { value: art.texture("stone") };
     shader.uniforms.landSand = { value: art.texture("sand") };
+    shader.uniforms.landGrass = { value: art.texture("grass") };
     shader.vertexShader = shader.vertexShader.replace(
       "#include <common>",
       "#include <common>\nattribute float verge; varying float vVerge; varying vec3 vLand; varying vec3 vSlope;",
@@ -22,7 +24,7 @@ export function landscapeMaterial(art) {
       "#include <common>",
       `
       #include <common>
-      uniform sampler2D landRock; uniform sampler2D landSand;
+      uniform sampler2D landRock; uniform sampler2D landSand; uniform sampler2D landGrass;
       varying float vVerge; varying vec3 vLand; varying vec3 vSlope;
       float landHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float landNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -37,10 +39,12 @@ export function landscapeMaterial(art) {
       float large=landNoise(p*.016)*.65+landNoise(p*.043+17.)*.35;
       float fine=landNoise(p*2.3)*.6+landNoise(p*7.1)*.4;
       // Linear-light palette: sage green, sunlit meadow, warm dry-earth pockets.
-      vec3 grass=mix(vec3(.115,.183,.055),vec3(.205,.275,.09),large);
-      grass*=.87+fine*.24;
+      vec3 grass=mix(vec3(.07,.13,.07),vec3(.155,.215,.105),large);
+      float grassGrain=texture2D(landGrass,p*.35).r*.62+
+        texture2D(landGrass,mat2(.8,-.6,.6,.8)*p*1.7).r*.38;
+      grass*=.81+fine*.12+grassGrain*.34;
       float dry=smoothstep(.57,.79,landNoise(p*.067+landNoise(p*.021)*3.));
-      vec3 soil=mix(vec3(.245,.20,.115),vec3(.34,.285,.17),large);
+      vec3 soil=mix(vec3(.23,.205,.145),vec3(.31,.275,.195),large);
       grass=mix(grass,soil,dry*.48);
       grass=mix(soil,grass,smoothstep(.1,.9,vVerge));
       float rock=smoothstep(.2,.61,1.-normalize(vSlope).y);
@@ -52,11 +56,14 @@ export function landscapeMaterial(art) {
       vec3 limestone=vec3(.46,.435,.365)*mix(vec3(.72),r*1.5,.42)*strata;
       vec3 terrain=mix(grass,limestone,rock);
       float coast=1.-smoothstep(.4,5.5,vLand.y+landNoise(p*.08)*1.8);
-      vec3 sand=vec3(.49,.407,.27)*(.88+texture2D(landSand,p*.38).r*.28);
+      float sandGrain=texture2D(landSand,p*.38).r;
+      vec3 sand=vec3(.49,.43,.32)*(.88+sandGrain*.28);
+      float terrainGrain=mix(mix(grassGrain,dot(r,vec3(.333)),rock),sandGrain,coast*(1.-rock));
       diffuseColor.rgb=mix(terrain,sand,coast*(1.-rock));
     `,
     );
+    addSurfaceRelief(shader, "terrainGrain", 0.014);
   };
-  material.customProgramCacheKey = () => "landscape-layers-v1";
+  material.customProgramCacheKey = () => "landscape-layers-v2";
   return material;
 }

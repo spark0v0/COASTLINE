@@ -1,4 +1,5 @@
 import { THREE, rng, geometryFromTriangles, urban } from "./kit.js";
+import { lakeDistance } from "../lake-data.js";
 
 // Small coherent planting islands along roads, with an open verge.
 // Every blade and shrub is batched; no downloaded alpha cards or particle lawn.
@@ -86,10 +87,41 @@ export function buildGroundCover(S) {
     { from: 0.14, to: 0.24, side: 1, spread: 27 },
     { from: 0.53, to: 0.64, side: 1, spread: 24 },
   ];
+  const occupiedPlots = [
+    ...(w.places || []),
+    ...(w.courtyards || []),
+    ...(w.frontages || []),
+    ...(w.streetscape || []),
+    ...(w.gardens || []),
+    ...(w.openSpaces || []),
+  ];
   const clear = (x, z, margin) => {
+    if (lakeDistance(x, z) < 1.62) return false;
     if (!w.inside(x, z) || w.height(x, z) < 1.1) return false;
+    if (
+      occupiedPlots.some((h) => {
+        const dx = x - h.x,
+          dz = z - h.z,
+          c = Math.cos(h.yaw),
+          s = Math.sin(h.yaw);
+        return (
+          Math.abs(dx * c + dz * s) < h.w / 2 + margin &&
+          Math.abs(-dx * s + dz * c) < h.d / 2 + margin
+        );
+      })
+    )
+      return false;
     const road = w.nearestRoad(x, z);
     if (road.d < road.width * 0.5 + margin) return false;
+    if (
+      x > 470 &&
+      z > -130 &&
+      z < 850 &&
+      road.id === 0 &&
+      x > road.x &&
+      road.d < road.width / 2 + 7.4
+    )
+      return false;
     return !w.buildings.some(
       (h) =>
         Math.abs(x - h.x) < h.w * 0.7 + margin &&
