@@ -413,22 +413,24 @@ export class WorldData {
         random() * 6.28,
       );
     }
-    // Deliberate rows frame the scenic approach without hiding the sea.
+    // Loose groves alternate planted foreground with open sea views.
     for (let i = 0; i < this.route.length; i += 10) {
       const p = this.route[i],
         q = this.route[Math.min(i + 1, this.route.length - 1)];
       if (p.z < -160 || (p.x < 450 && Math.abs(p.x + 201) > 3)) continue;
       const yaw = Math.atan2(q.z - p.z, q.x - p.x);
       for (const side of [-1, 1]) {
-        const x = p.x - Math.sin(yaw) * 21 * side,
-          z = p.z + Math.cos(yaw) * 21 * side;
+        if (random() < 0.32) continue;
+        const offset = 19 + random() * 17;
+        const x = p.x - Math.sin(yaw) * offset * side + (random() - 0.5) * 7,
+          z = p.z + Math.cos(yaw) * offset * side + (random() - 0.5) * 7;
         if (
           !this.inside(x, z) ||
           this.isJunction(x, z, 0, 4) ||
           this.buildings.some((b) => Math.hypot(x - b.x, z - b.z) < 17)
         )
           continue;
-        tree(x, z, "palm", 10 + (i % 4), i * 0.37);
+        tree(x, z, "palm", 7.5 + random() * 3.5, i * 0.37);
       }
     }
     for (const road of this.roads) {

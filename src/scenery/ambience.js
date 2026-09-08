@@ -48,9 +48,9 @@ export function buildAmbience(S) {
   // Rock outcrops give mountains and sea cliffs a sense of geological scale.
   const r = S.rng511;
   const rock = S.art.get("stone", "#b3a68b");
-  b.geometries.rock0 = S.makeRock(1);
-  b.geometries.rock1 = S.makeRock(2);
-  b.geometries.rock2 = S.makeRock(3);
+  b.geometries.rock0 ||= S.makeRock(1);
+  b.geometries.rock1 ||= S.makeRock(2);
+  b.geometries.rock2 ||= S.makeRock(3);
   for (let i = 0; i < 340; i++) {
     const x = -1080 + r() * 1800,
       z = -1150 + r() * 2150;

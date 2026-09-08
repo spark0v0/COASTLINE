@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { outdoorEnvironment } from "./outdoor-environment.js";
 import { IslandScenery as Scenery } from "./island-scene.js";
 import { VehicleView } from "./vehicle.js";
 import { damp, clamp } from "./math.js";
@@ -25,7 +25,7 @@ export class GameRenderer {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene = new THREE.Scene();
     // Warm coastal sunlight with neutral whites and a cool atmospheric fill.
-    this.scene.fog = new THREE.FogExp2("#cdd7d5", 0.00066);
+    this.scene.fog = new THREE.FogExp2("#c2d5df", 0.00066);
     this.camera = new THREE.PerspectiveCamera(57, 1, 0.18, 8000);
     this.camera.position.set(world.spawn.x + 12, 8, world.spawn.z - 12);
     this.look = new THREE.Vector3(world.spawn.x, 3, world.spawn.z);
@@ -46,21 +46,17 @@ export class GameRenderer {
     this.sun.shadow.normalBias = 0.035;
     this.sun.shadow.radius = 3.5;
     this.scene.add(this.sun, this.sun.target);
-    const pmrem = new THREE.PMREMGenerator(this.renderer),
-      room = new RoomEnvironment();
-    this.environment = pmrem.fromScene(room, 0.015);
+    this.environment = outdoorEnvironment(this.renderer);
     this.scene.environment = this.environment.texture;
-    this.scene.environmentIntensity = 0.65;
-    room.dispose();
-    pmrem.dispose();
+    this.scene.environmentIntensity = 0.7;
     const sky = new THREE.Mesh(
       new THREE.SphereGeometry(6500, 32, 16),
       new THREE.ShaderMaterial({
         side: THREE.BackSide,
         depthWrite: false,
         uniforms: {
-          top: { value: new THREE.Color("#2e7cbd") },
-          bottom: { value: new THREE.Color("#dfe8e5") },
+          top: { value: new THREE.Color("#3987c2") },
+          bottom: { value: new THREE.Color("#c2ddeb") },
           sun: { value: new THREE.Vector3(-0.7, 0.54, 0.47).normalize() },
         },
         vertexShader:

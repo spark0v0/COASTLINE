@@ -1,21 +1,18 @@
 import { THREE, quad, geometryFromTriangles, mesh, smooth } from "./kit.js";
+import { landscapeMaterial } from "../landscape-material.js";
 
 // Terrain chunks, shoreline quads and the animated water plane.
 export function buildTerrain(S) {
   const w = S.world,
-    step = 8,
+    step = 6,
     chunk = 192,
     bounds = w.bounds;
-  const ground = S.art.get("grass", "#a3ad79", 1);
-  ground.vertexColors = true;
-  const green = new THREE.Color("#aeb48b"),
-    stone = new THREE.Color("#cebea1"),
-    dry = new THREE.Color("#c0b27e");
+  const ground = landscapeMaterial(S.art);
   for (let cx = bounds.minX; cx < bounds.maxX; cx += chunk)
     for (let cz = bounds.minZ; cz < bounds.maxZ; cz += chunk) {
       const positions = [],
         normals = [],
-        colors = [],
+        verges = [],
         uv = [],
         indices = [],
         n = chunk / step;
@@ -36,18 +33,11 @@ export function buildTerrain(S) {
           positions.push(x, h - depression, z);
           normals.push(normal.x, normal.y, normal.z);
           uv.push(x * 0.1, z * 0.1);
-          const slope = Math.hypot(dx, dz),
-            variation =
-              0.5 +
-              0.5 *
-                Math.sin(x * 0.014 + Math.sin(z * 0.019) * 2) *
-                Math.cos(z * 0.008);
-          const color = green
-            .clone()
-            .lerp(dry, variation * 0.36)
-            .lerp(stone, smooth(0.21, 0.55, slope) * 0.85);
-          if (z < -750) color.lerp(stone, 0.17);
-          colors.push(color.r, color.g, color.b);
+          verges.push(
+            nearest
+              ? smooth(nearest.width / 2 + 1, nearest.width / 2 + 9, nearest.d)
+              : 1,
+          );
         }
       for (let i = 0; i < n; i++)
         for (let j = 0; j < n; j++) {
@@ -65,7 +55,7 @@ export function buildTerrain(S) {
         new THREE.Float32BufferAttribute(positions, 3),
       );
       g.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
-      g.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+      g.setAttribute("verge", new THREE.Float32BufferAttribute(verges, 1));
       g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
       g.setIndex(indices);
       mesh(g, ground, S.group, [0, 0, 0], [0, 0, 0], [1, 1, 1], false);
@@ -108,8 +98,8 @@ export function buildTerrain(S) {
     );
   }
   for (const [positions, kind, color] of [
-    [beach, "sand", "#e3d3a4"],
-    [cliff, "stone", "#bfb090"],
+    [beach, "sand", "#d7c7a4"],
+    [cliff, "stone", "#beb9a6"],
   ]) {
     const mat = S.art.get(kind, color);
     mat.side = THREE.DoubleSide;

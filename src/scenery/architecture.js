@@ -11,7 +11,7 @@ export function buildModernArchitecture(S) {
   b.lodGeometries.softSlab = [b.geometries.box];
   b.geometries.resortColumn = new THREE.CylinderGeometry(0.83, 1, 1, 32);
   const white = S.art.get("stucco", "#e8e7df", 0.78);
-  const stone = S.art.get("stone", "#b9baae", 0.86);
+  const stone = S.art.get("limestone", "#c9c6b9", 0.86);
   const timber = S.art.get("wood", "#96795a", 0.75);
   const graphite = "#293b40";
   const glazing = new THREE.MeshPhysicalMaterial({

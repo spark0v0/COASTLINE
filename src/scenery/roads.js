@@ -4,7 +4,7 @@ import { THREE, quad, geometryFromTriangles, mesh, urban } from "./kit.js";
 export function buildRoads(S) {
   const w = S.world;
   const mats = [
-    S.art.get("asphalt", "#8a8d87", 0.96),
+    S.art.get("asphalt", "#555d61", 0.96),
     S.art.get("paving", "#cbc2ad"),
     new THREE.MeshStandardMaterial({ color: "#eee3bd", roughness: 0.9 }),
     S.art.get("stone", "#b3a68b"),

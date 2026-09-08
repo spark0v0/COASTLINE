@@ -63,6 +63,10 @@ export class ArtMaterials {
           n = 155 + 66 * Math.sin(q * Math.PI) + (r() - 0.5) * 12;
           if (y % 42 < 3) n -= 34;
         }
+        if (kind === "limestone") {
+          n = 227 + (r() - 0.5) * 7 + 2 * Math.sin(y * 0.21);
+          if (y % 128 === 0) n -= 13;
+        }
         if (kind === "wood")
           n += 13 * Math.sin(x * 0.6 + Math.sin(y * 0.08) * 0.6);
         if (kind === "paving") {
@@ -109,6 +113,7 @@ export class ArtMaterials {
     const scale =
       {
         stone: 0.22,
+        limestone: 0.4,
         roof: 0.45,
         wood: 0.32,
         grass: 0.08,
@@ -153,6 +158,12 @@ export class ArtMaterials {
         diffuseColor.rgb*=mix(vec3(1.0),texel.rgb,artStrength);
       `,
       );
+      if (kind === "asphalt") {
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "diffuseColor.rgb*=mix(vec3(1.0),texel.rgb,artStrength);",
+          "float grain=texture2D(map,vArtWorld.xz*4.3).r; float broad=texture2D(map,vArtWorld.xz*.017).r; diffuseColor.rgb*=.82+grain*.16+broad*.07;",
+        );
+      }
       shader.fragmentShader = shader.fragmentShader.replace(
         "#include <roughnessmap_fragment>",
         `float roughnessFactor = roughness;

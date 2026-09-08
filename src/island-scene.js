@@ -10,6 +10,7 @@ import { buildCoast } from "./scenery/coast.js";
 import { buildRidge } from "./scenery/ridge.js";
 import { buildValley } from "./scenery/valley.js";
 import { buildAmbience } from "./scenery/ambience.js";
+import { buildGroundCover } from "./scenery/groundcover.js";
 
 // Orchestrator: regional art layers share the physics height field and road
 // data. Each region builder lives in src/scenery/<region>.js.
@@ -20,6 +21,8 @@ export class IslandScenery extends Scenery {
     this.rng511 = rng(511);
     this.makeRock = makeRock;
     this.geometryFromTriangles = geometryFromTriangles;
+    for (let i = 0; i < 3; i++)
+      this.batch.geometries["rock" + i] = makeRock(i + 1);
     buildTerrain(this);
     buildRoads(this);
     buildTown(this);
@@ -28,6 +31,7 @@ export class IslandScenery extends Scenery {
     buildRidge(this);
     buildValley(this);
     buildAmbience(this);
+    buildGroundCover(this);
   }
   update(time, car) {
     this.waterMaterial.uniforms.time.value = time;

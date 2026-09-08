@@ -4,6 +4,10 @@
 
 现代建筑套件（src/scenery/architecture.js）、跑车曲面与轮拱（src/vehicle-geometry.js）、植物分枝和树冠均为本项目代码构造，未新增外部模型、贴图、音频或依赖。RoundedBoxGeometry 来自已安装的 Three.js addons，沿用下方 Three.js MIT 许可。已有 CC0 表面贴图继续本地复用。
 
+## 地表与景观修订
+
+地形分层着色器、草叶、薰衣草、灌木布局和室外反射均由项目代码生成；石与沙继续复用既有 CC0 贴图，未增加下载或项目依赖。草地不再把航拍照片叠乘到整片地面。
+
 ## 游戏内容
 
 车辆、建筑、道路、地形、树木、灯塔、码头、标识、海水、接触阴影、粒子和音效由当前项目代码生成。
@@ -12,7 +16,7 @@
 - 瓦顶、木材纹理与所有几何模型（建筑套件、羽状棕榈、松树、橄榄树、灯塔、帆船、教堂、拱门、观景台）由 `src/art-materials.js`、`src/island-scene.js` 程序化构建。
 - 没有使用游戏品牌、汽车厂商品牌、商标或真实车型资产。
 - 字体使用操作系统已有字体，不分发字体文件。
-- RoomEnvironment 来自 Three.js 的官方 addons，在内存中生成反射环境，不下载 HDR 文件。
+- 当前环境反射由 src/outdoor-environment.js 的项目原创天空/地面着色器在内存中生成，不下载 HDR 文件；旧版 RoomEnvironment 已替换。
 
 ## 表面贴图（Poly Haven，CC0）
 
