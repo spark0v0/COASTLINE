@@ -5,19 +5,19 @@ export function buildCoast(S) {
   const w = S.world,
     b = S.batch,
     stone = S.art.get("stone", "#d4c3a3"),
-    white = S.art.get("stucco", "#efe2c4"),
-    roof = S.art.get("roof", "#b97552");
+    white = S.art.get("stucco", "#e8e7df"),
+    roof = S.art.get("roof", "#537779");
   // Lighthouse is off the driving surface, on the seaward side of the coastal approach.
   const cp = w.pointAt(w.routeLength * 0.75),
     x = cp.x + 25,
     z = cp.z,
     y = w.height(x, z);
-  b.add("cylinder", stone, [x, y + 0.6, z], [7, 1.2, 7]);
-  b.add("cylinder", white, [x, y + 12, z], [3.3, 23, 3.3]);
-  b.add("cylinder", roof, [x, y + 15, z], [3.1, 2.1, 3.1]);
-  b.add("cylinder", stone, [x, y + 24, z], [4.2, 0.5, 4.2]);
-  b.add("cylinder", "#57797b", [x, y + 26, z], [2.7, 3, 2.7]);
-  b.add("cone", roof, [x, y + 28.3, z], [3.7, 2.2, 3.7]);
+  b.add("resortColumn", stone, [x, y + 0.6, z], [7, 1.2, 7]);
+  b.add("resortColumn", white, [x, y + 12, z], [3.3, 23, 3.3]);
+  b.add("resortColumn", roof, [x, y + 15, z], [3.1, 2.1, 3.1]);
+  b.add("resortColumn", stone, [x, y + 24, z], [4.2, 0.5, 4.2]);
+  b.add("resortColumn", "#57797b", [x, y + 26, z], [2.7, 3, 2.7]);
+  b.add("resortColumn", white, [x, y + 27.8, z], [3.7, 0.35, 3.7]);
   w.register({ type: "circle", x, z, r: 5 });
   for (let i = 0; i < 8; i++) {
     const a = (i * Math.PI) / 4;
@@ -36,9 +36,9 @@ export function buildCoast(S) {
     kz = z - 9,
     ky = w.height(kx, kz);
   b.box(white, kx, ky, kz, 6, 3.4, 4.6, 0.4);
-  b.add("roof", roof, [kx, ky + 4.4, kz], [4.6, 1.6, 3.4], [0, 0.4, 0]);
+  b.box(white, kx, ky + 3.4, kz, 6.5, 0.28, 5, 0.4);
   b.box("#385955", kx, ky + 0.2, kz + 2.4, 1.1, 2.2, 0.12, 0.4);
-  b.box("#546761", kx + 1.6, ky + 1.4, kz + 2.35, 0.9, 0.9, 0.08, 0.4);
+  b.box("#355763", kx + 0.86, ky + 0.45, kz + 2.1, 3.8, 2.4, 0.12, 0.4);
   w.register({ type: "box", x: kx, z: kz, w: 6.5, d: 5, h: 4.6, yaw: 0.4 });
   for (let i = 0; i < 14; i++) {
     if (i === 6 || i === 7) continue; // gate gap facing the road

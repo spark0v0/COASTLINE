@@ -5,8 +5,8 @@ import { THREE, mesh, textTexture } from "./kit.js";
 export function buildAmbience(S) {
   const w = S.world,
     b = S.batch,
-    white = S.art.get("stucco", "#efe2c4"),
-    roof = S.art.get("roof", "#b97552");
+    white = S.art.get("stucco", "#e8e7df"),
+    roof = S.art.get("stucco", "#344950");
   const gate = w.pointAt(w.routeLength * 0.955),
     gRight = { x: Math.cos(gate.yaw), z: Math.sin(gate.yaw) };
   const gx = gate.x,
@@ -16,11 +16,19 @@ export function buildAmbience(S) {
   for (const side of [-1, 1]) {
     const qx = gx + gRight.x * 8.8 * side,
       qz = gz + gRight.z * 8.8 * side;
-    b.box(white, qx, gy, qz, 1.4, 5.8, 1.4, gYaw);
-    b.add("cone", roof, [qx, gy + 6.4, qz], [1.4, 1.2, 1.4]);
-    w.register({ type: "box", x: qx, z: qz, w: 1.6, d: 1.6, h: 6.2, yaw: 0 });
+    b.box(white, qx, gy, qz, 0.5, 6.1, 0.8, gYaw);
+
+    w.register({
+      type: "box",
+      x: qx,
+      z: qz,
+      w: 0.5,
+      d: 0.8,
+      h: 6.2,
+      yaw: gYaw,
+    });
   }
-  b.box(roof, gx, gy + 5.9, gz, 1.1, 0.55, 19, gYaw);
+  b.box(roof, gx, gy + 5.9, gz, 0.85, 0.28, 19, gYaw);
   const gateSign = textTexture("棕 榈 港", { bg: "#efe2c4", fg: "#8a4436" });
   for (const flip of [1, -1]) {
     mesh(

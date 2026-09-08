@@ -1,5 +1,9 @@
 # 资源与依赖记录
 
+## 2026-09-08 模型改造
+
+现代建筑套件（src/scenery/architecture.js）、跑车曲面与轮拱（src/vehicle-geometry.js）、植物分枝和树冠均为本项目代码构造，未新增外部模型、贴图、音频或依赖。RoundedBoxGeometry 来自已安装的 Three.js addons，沿用下方 Three.js MIT 许可。已有 CC0 表面贴图继续本地复用。
+
 ## 游戏内容
 
 车辆、建筑、道路、地形、树木、灯塔、码头、标识、海水、接触阴影、粒子和音效由当前项目代码生成。

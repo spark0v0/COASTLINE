@@ -5,7 +5,7 @@ import { rng } from "./kit.js";
 export function buildRidge(S) {
   const w = S.world,
     b = S.batch,
-    white = S.art.get("stucco", "#efe2c4"),
+    white = S.art.get("stucco", "#e8e7df"),
     roof = S.art.get("roof", "#b97552");
   const stone = S.art.get("stone", "#a89980");
   const wood = S.art.get("wood", "#8a7355");
@@ -16,12 +16,35 @@ export function buildRidge(S) {
     sz = summit.z - 28,
     sy = w.height(sx, sz);
   if (w.nearestRoad(sx, sz).d > 20) {
-    b.box(white, sx, sy, sz, 12, 7, 17);
-    b.add("roof", roof, [sx, sy + 9, sz], [9, 3, 12]);
-    b.box(white, sx + 8, sy, sz, 4, 14, 4);
-    b.add("cone", roof, [sx + 8, sy + 15, sz], [3.2, 3, 3.2]);
-    b.box("#385955", sx, sy + 0.2, sz + 8.55, 2.2, 3.2, 0.1);
-    w.register({ type: "box", x: sx, z: sz, w: 22, d: 18, h: 15, yaw: 0 });
+    // A glazed summit gallery and a slender observation tower.
+    b.box(stone, sx, sy - 0.15, sz, 15, 0.55, 18);
+    b.box("#365866", sx, sy + 0.4, sz, 11.6, 5.2, 16);
+    b.box(white, sx, sy + 5.6, sz, 15, 0.35, 18);
+    b.box(wood, sx - 4.8, sy + 0.4, sz, 2.2, 5.2, 16.2);
+    for (const side of [-1, 1])
+      for (let i = 0; i < 5; i++)
+        b.box(
+          white,
+          sx + side * 5.9,
+          sy + 0.4,
+          sz - 7 + i * 3.5,
+          0.18,
+          5.2,
+          0.18,
+        );
+    b.box(white, sx + 8, sy, sz, 2, 11, 3);
+    b.box("#293b40", sx + 8, sy + 8.6, sz, 2.2, 1.7, 3.2);
+    b.box(white, sx + 8, sy + 10.3, sz, 3.5, 0.25, 4.4);
+    w.register({ type: "box", x: sx, z: sz, w: 15, d: 18, h: 6, yaw: 0 });
+    w.register({
+      type: "box",
+      x: sx + 8,
+      z: sz,
+      w: 2.2,
+      d: 3.2,
+      h: 11,
+      yaw: 0,
+    });
   }
   // Ridge-top pull-off just before the summit hairpin: the place to stop
   // and look back over the island.
@@ -60,13 +83,7 @@ export function buildRidge(S) {
     hy = w.height(hx, hz);
   if (w.nearestRoad(hx, hz).d > 16) {
     b.box(wood, hx, hy, hz, 7, 3.4, 5.2, hp.yaw);
-    b.add(
-      "roof",
-      S.art.get("roof", "#8a6a4c"),
-      [hx, hy + 4.3, hz],
-      [5.6, 2.0, 5.8],
-      [0, -hp.yaw, 0],
-    );
+    b.box(white, hx, hy + 3.4, hz, 7.6, 0.28, 5.8, hp.yaw);
     b.box("#385955", hx, hy + 0.6, hz + 2.55, 1.2, 2.3, 0.12, hp.yaw);
     b.box(
       "#f6ecd2",

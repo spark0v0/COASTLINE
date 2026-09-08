@@ -24,13 +24,13 @@ export class GameRenderer {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene = new THREE.Scene();
-    // Golden late-afternoon: low warm sun, cool ambient fill, hazy gold fog.
-    this.scene.fog = new THREE.FogExp2("#d3ccbc", 0.00066);
+    // Warm coastal sunlight with neutral whites and a cool atmospheric fill.
+    this.scene.fog = new THREE.FogExp2("#cdd7d5", 0.00066);
     this.camera = new THREE.PerspectiveCamera(57, 1, 0.18, 8000);
     this.camera.position.set(world.spawn.x + 12, 8, world.spawn.z - 12);
     this.look = new THREE.Vector3(world.spawn.x, 3, world.spawn.z);
     this.scene.add(new THREE.HemisphereLight("#c9dff2", "#8f8066", 1.05));
-    this.sun = new THREE.DirectionalLight("#ffbe82", 2.9);
+    this.sun = new THREE.DirectionalLight("#ffe2bc", 2.9);
     this.sun.position.set(-90, 140, 65);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
@@ -50,7 +50,7 @@ export class GameRenderer {
       room = new RoomEnvironment();
     this.environment = pmrem.fromScene(room, 0.015);
     this.scene.environment = this.environment.texture;
-    this.scene.environmentIntensity = 0.5;
+    this.scene.environmentIntensity = 0.65;
     room.dispose();
     pmrem.dispose();
     const sky = new THREE.Mesh(
@@ -60,7 +60,7 @@ export class GameRenderer {
         depthWrite: false,
         uniforms: {
           top: { value: new THREE.Color("#2e7cbd") },
-          bottom: { value: new THREE.Color("#f0ddb9") },
+          bottom: { value: new THREE.Color("#dfe8e5") },
           sun: { value: new THREE.Vector3(-0.7, 0.54, 0.47).normalize() },
         },
         vertexShader:
