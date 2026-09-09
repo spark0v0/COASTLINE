@@ -1,6 +1,6 @@
 import { THREE, mesh, textTexture } from "./scene-utils.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { sportBodyGeometry } from "./vehicle-geometry.js";
+import { sportBodyGeometry, sportCanopyGeometry } from "./vehicle-geometry.js";
 
 export class VehicleView {
   constructor(scene) {
@@ -10,9 +10,9 @@ export class VehicleView {
     this.root.add(this.chassis);
     this.wheels = [];
     const paint = new THREE.MeshPhysicalMaterial({
-      color: "#267c8b",
+      color: "#176d87",
       metalness: 0.46,
-      roughness: 0.24,
+      roughness: 0.29,
       clearcoat: 1,
       clearcoatRoughness: 0.12,
       envMapIntensity: 1.25,
@@ -23,8 +23,8 @@ export class VehicleView {
       metalness: 0.4,
     });
     const glass = new THREE.MeshPhysicalMaterial({
-      color: "#34474e",
-      metalness: 0.28,
+      color: "#283b45",
+      metalness: 0.12,
       roughness: 0.14,
       clearcoat: 1,
       envMapIntensity: 1.3,
@@ -61,108 +61,36 @@ export class VehicleView {
         box(side * 0.83, 0.4, zz, 0.045, 0.56, 0.84, dark);
       }
       box(side * 1.012, 0.59, -0.02, 0.017, 0.018, 1.7, dark);
-      box(side * 1.012, 0.74, 0.48, 0.022, 0.055, 0.21, alloy);
+
       // Side skirts bridging the wheels.
       box(side * 0.99, 0.2, 0, 0.1, 0.16, 1.95, dark);
     }
     paint.side = THREE.DoubleSide;
     mesh(sportBodyGeometry(), paint, body);
-    // Glass canopy: windshield, roof panel, rear screen and side windows.
-    const q = (a, b, c, d, mat) => {
-      const points = [],
-        indices = [],
-        nx = 10,
-        ny = 5;
-      for (let j = 0; j <= ny; j++)
-        for (let i = 0; i <= nx; i++) {
-          const u = i / nx,
-            v = j / ny;
-          const left = new THREE.Vector3(...a).lerp(new THREE.Vector3(...d), v);
-          const right = new THREE.Vector3(...b).lerp(
-            new THREE.Vector3(...c),
-            v,
-          );
-          const p = left.lerp(right, u);
-          p.y += Math.sin(u * Math.PI) * Math.sin(v * Math.PI) * 0.04;
-          points.push(p.x, p.y, p.z);
-        }
-      for (let j = 0; j < ny; j++)
-        for (let i = 0; i < nx; i++) {
-          const a = j * (nx + 1) + i,
-            b = a + 1,
-            c = b + nx + 1,
-            d = c - 1;
-          indices.push(a, b, c, a, c, d);
-        }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
-      g.setIndex(indices);
-      g.computeVertexNormals();
-      return mesh(g, mat, body);
-    };
     glass.side = THREE.DoubleSide;
-    q(
-      [-0.8, 0.89, -0.92],
-      [0.8, 0.89, -0.92],
-      [0.66, 1.36, -0.27],
-      [-0.66, 1.36, -0.27],
-      glass,
-    );
-    q(
-      [-0.66, 1.36, -0.27],
-      [0.66, 1.36, -0.27],
-      [0.7, 1.36, 0.57],
-      [-0.7, 1.36, 0.57],
-      paint,
-    );
-    q(
-      [-0.7, 1.36, 0.57],
-      [0.7, 1.36, 0.57],
-      [0.88, 0.96, 1.24],
-      [-0.88, 0.96, 1.24],
-      glass,
-    );
-    for (const s of [-1, 1]) {
-      const edge = new THREE.CatmullRomCurve3(
-        [
-          new THREE.Vector3(s * 0.81, 0.89, -0.91),
-          new THREE.Vector3(s * 0.67, 1.35, -0.27),
-          new THREE.Vector3(s * 0.7, 1.36, 0.56),
-          new THREE.Vector3(s * 0.89, 0.96, 1.23),
-        ],
-        false,
-        "centripetal",
-      );
-      mesh(new THREE.TubeGeometry(edge, 28, 0.024, 6, false), paint, body);
-      q(
-        [s * 0.83, 0.9, -0.85],
-        [s * 0.67, 1.34, -0.25],
-        [s * 0.7, 1.33, 0.52],
-        [s * 0.88, 0.96, 1.15],
-        glass,
-      );
-      box(s * 0.745, 1.12, 0.39, 0.035, 0.44, 0.055, dark, [0, 0, s * 0.2]);
-      // Mirrors on the A-pillar bases.
-      box(s * 0.92, 0.98, -0.78, 0.16, 0.07, 0.1, paint);
-      box(s * 1.0, 0.25, 0, 0.05, 0.09, 1.7, dark);
-      box(s * 1.035, 0.98, -0.61, 0.24, 0.12, 0.31, paint);
-      box(s * 0.9, 0.97, -0.6, 0.21, 0.05, 0.08, dark);
-      box(s * 1.033, 0.64, 0.64, 0.022, 0.19, 0.45, dark);
-      box(
-        s * 0.53,
-        0.67,
-        -2.24,
-        0.51,
-        0.038,
-        0.1,
-        new THREE.MeshStandardMaterial({
-          color: "#edfaff",
-          emissive: "#cceeff",
-          emissiveIntensity: 1.3,
-          roughness: 0.2,
-        }),
-        [0, s * 0.19, 0],
-      );
+    mesh(sportCanopyGeometry(), [paint, glass], body);
+    const lamp = new THREE.MeshStandardMaterial({
+      color: "#effbff",
+      emissive: "#c3e9ff",
+      emissiveIntensity: 1.1,
+      roughness: 0.24,
+    });
+    for (const side of [-1, 1]) {
+      box(side * 0.94, 0.94, -0.69, 0.17, 0.04, 0.1, dark);
+      box(side * 1.04, 0.97, -0.64, 0.22, 0.09, 0.29, paint);
+      // Flush door handles and a narrow side intake below the rear shoulder.
+      box(side * 0.984, 0.73, 0.39, 0.018, 0.025, 0.18, alloy);
+      box(side * 1.008, 0.53, 0.67, 0.016, 0.12, 0.28, dark, [
+        0,
+        0,
+        side * -0.15,
+      ]);
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(side * 0.37, 0.64, -2.24),
+        new THREE.Vector3(side * 0.66, 0.65, -2.22),
+        new THREE.Vector3(side * 0.83, 0.68, -2.09),
+      ]);
+      mesh(new THREE.TubeGeometry(curve, 16, 0.017, 6, false), lamp, body);
     }
     // Interior seen through the glass: dash, wheel, seats.
     const cabin = new THREE.MeshStandardMaterial({
@@ -187,12 +115,11 @@ export class VehicleView {
     // Front splitter lip.
     box(0, 0.13, -2.24, 1.6, 0.07, 0.3, dark);
     // A narrow recessed rear grille and lower valance, framed by the body.
-    box(0, 0.43, 2.347, 1.37, 0.105, 0.025, dark);
+    box(0, 0.43, 2.347, 1.22, 0.1, 0.025, dark);
     box(0, 0.29, 2.3, 1.57, 0.065, 0.2, dark);
     for (const side of [-1, 1])
       box(side * 0.76, 0.39, 2.31, 0.17, 0.2, 0.11, paint);
-    for (let i = -5; i <= 5; i++)
-      box(i * 0.113, 0.43, 2.363, 0.018, 0.079, 0.008, alloy);
+
     for (let i = -2; i <= 2; i++)
       box(i * 0.24, 0.23, 2.2, 0.023, 0.1, 0.28, dark);
     // Twin exhaust tips.
@@ -205,15 +132,28 @@ export class VehicleView {
         [Math.PI / 2, 0, 0],
       );
     // Integrated trailing edge: a low ducktail, without oversized wing pylons.
-    box(0, 0.87, 2.04, 1.74, 0.045, 0.2, paint, [-0.08, 0, 0]);
+    // Rear shoulder and deck are sculpted into the continuous body loft.
     this.brakeMat = new THREE.MeshStandardMaterial({
       color: "#b32823",
       emissive: "#ff3325",
       emissiveIntensity: 0.85,
       roughness: 0.28,
     });
-    box(0, 0.7, 2.35, 1.62, 0.068, 0.022, dark);
-    box(0, 0.705, 2.365, 1.57, 0.024, 0.014, this.brakeMat);
+    for (const side of [-1, 1]) {
+      const curve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(side * 0.24, 0.694, 2.356),
+        new THREE.Vector3(side * 0.6, 0.716, 2.322),
+        new THREE.Vector3(side * 0.83, 0.752, 2.225),
+      ]);
+      mesh(new THREE.TubeGeometry(curve, 22, 0.032, 8, false), dark, body);
+      const light = curve.clone();
+      light.points.forEach((p) => (p.z += 0.018));
+      mesh(
+        new THREE.TubeGeometry(light, 22, 0.016, 6, false),
+        this.brakeMat,
+        body,
+      );
+    }
     box(0, 0.62, 2.365, 0.24, 0.018, 0.02, alloy);
     const plate = new THREE.MeshBasicMaterial({
       map: textTexture("COAST / 01", {

@@ -4,7 +4,7 @@ import { THREE, quad, geometryFromTriangles, mesh, urban } from "./kit.js";
 export function buildRoads(S) {
   const w = S.world;
   const mats = [
-    S.art.get("asphalt", "#555d61", 0.96),
+    S.art.get("asphalt", "#434b50", 0.96),
     S.art.get("paving", "#cbc2ad"),
     new THREE.MeshStandardMaterial({ color: "#eee3bd", roughness: 0.9 }),
     S.art.get("stone", "#b3a68b"),
@@ -55,7 +55,7 @@ export function buildRoads(S) {
       if (!w.isJunction((a.x + b.x) / 2, (a.z + b.z) / 2, path.id, 3)) {
         const mx = (a.x + b.x) / 2,
           mz = (a.z + b.z) / 2;
-        if (urban(mx, mz)) {
+        if (urban(mx, mz) && !(mx > 465 && mz > 200 && mz < 640)) {
           for (const side of [-1, 1]) {
             ribbon(surfaces[1], side * (path.width / 2 + 1.2), 2.4, 0.175);
             ribbon(surfaces[4], side * (path.width / 2 + 0.14), 0.25, 0.18);

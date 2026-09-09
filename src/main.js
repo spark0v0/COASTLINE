@@ -347,7 +347,7 @@ class Game {
       this.effects.reset();
       this.snap = true;
       this.freeDrive();
-      this.toast("晴湾花园路 · 沿金色路线向东，到海岸路口左转");
+      this.toast("晴湾花园路 · 沿金线穿过住宅街，海岸左转，前往观景停靠点");
     };
     $("retry-button").onclick = () => {
       this.scriptedDriver = null;

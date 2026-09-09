@@ -40,12 +40,57 @@ export class WorldData {
     this.regions = REGIONS;
     this.lake = { ...CENTRAL_LAKE, shore: LAKE_SHORE };
     this.route = this.curve(ROUTE_NODES, true);
-    this.addPath(this.route, 15, "环岛公路");
+    this.addPath(this.route, 10.5, "环岛公路");
     this.addPath([point(-170, 233), point(122, 233)], 16, "港湾大道");
     for (const x of [-170, 60])
       this.addPath([point(x, 233), point(x, -40)], 15, "城市街道");
-    for (const z of [-40, 65, 170])
+    for (const z of [-40, 65])
       this.addPath([point(-170, z), point(192, z)], 15, "城市街道");
+    // Metre-authored promenade; the same ribbon feeds rendering, reset,
+    // off-road grip, roadside placement and the minimap.
+    const coastAt = (z) =>
+      this.route.reduce(
+        (a, b) => (b.x > 590 && Math.abs(b.z - z) < Math.abs(a.z - z) ? b : a),
+        { x: 635, z: 9999 },
+      );
+    this.scenicJoin = coastAt(490);
+    this.addPath(
+      this.curve(
+        [
+          [-569.5, 569.5],
+          [-90, 569.5],
+          [55, 569.5],
+          [133, 549],
+          [201, 569.5],
+          [274, 590],
+          [351, 571],
+          [426, 541],
+          [503, 548],
+          [563, 528],
+          [602, 503],
+          [this.scenicJoin.x, this.scenicJoin.z],
+        ].map(([x, z]) => point(x / S, z / S)),
+        false,
+      ),
+      8.4,
+      "晴湾花园街道",
+    );
+    this.overlookJoin = coastAt(282);
+    this.addPath(
+      this.curve(
+        [
+          this.overlookJoin,
+          point(this.overlookJoin.x + 13, this.overlookJoin.z - 4),
+          point(682, 266),
+          point(686, 246),
+          point(676, 235),
+        ].map((p) => point(p.x / S, p.z / S)),
+        false,
+      ),
+      7.2,
+      "晴湾观景支路",
+    );
+    this.overlook = { x: 686, z: 246 };
     const loop = Array.from({ length: 97 }, (_, i) =>
       lakePoint((i / 96) * Math.PI * 2, 1.28),
     );
@@ -160,6 +205,12 @@ export class WorldData {
         name: "镜湖公园",
         description: "驶入环湖路，在喷泉与树影之间慢下来。",
       },
+      {
+        ...this.overlook,
+        yaw: Math.PI / 2,
+        name: "晴湾观景台",
+        description: "驶过花园街与沿海缓弯，在这里回望晴湾。",
+      },
     ].map((d, i) => ({
       ...(d.at !== undefined ? this.pointAt(this.routeLength * d.at) : d),
       id: "vista-" + i,
@@ -263,7 +314,13 @@ export class WorldData {
       (Math.sin(x * 0.058 + z * 0.016) * Math.cos(z * 0.041) * 3.4 +
         Math.sin(x * 0.113 + z * 0.073) * 1.3) *
       smooth(-60, -200, z);
-    let h = 3.1 + mountains + valley + folds;
+    // Broad, gentle landforms bring the coast above the sea. Shared sampling
+    // keeps road surface, car suspension and foundations on the same slopes.
+    const coastalRelief =
+      hill(164, 126, 37, 61, 13) +
+      hill(192, 64, 24, 38, 10) +
+      hill(96, 143, 33, 21, 3.2);
+    let h = 3.1 + mountains + valley + folds + coastalRelief;
     // Low shoreline eases below sea level so beaches slope into the water;
     // tall sea cliffs keep their full drop.
     const rim = this.shoreRim(x, z);

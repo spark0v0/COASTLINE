@@ -1,7 +1,7 @@
 import { ResortKit } from "./resort-kit.js";
 import { placeOnVerge } from "./verge-placement.js";
 import { groundBed, groundPath } from "./ground-patches.js";
-import { TOUR_STREET_Z } from "../scenic-route.js";
+import { TOUR_STREET_Z, tourFrame } from "../scenic-route.js";
 
 // Few placed compositions alternate with clear views; each footprint is checked.
 export function buildScenicGardens(S) {
@@ -16,12 +16,13 @@ export function buildScenicGardens(S) {
   S.world.scenicBeds = [];
   for (let i = 0; i < sites.length; i++) {
     const [x, side, width, depth] = sites[i];
+    const frame = tourFrame(S.world, x);
     let site = null;
     for (const offset of [13, 16, 20]) {
       site = placeOnVerge(S.world, {
-        x,
-        z: TOUR_STREET_Z + side * offset,
-        yaw: side > 0 ? Math.PI : 0,
+        x: frame.x + frame.nx * side * offset,
+        z: frame.z + frame.nz * side * offset,
+        yaw: frame.angle + (side > 0 ? Math.PI : 0),
         w: width,
         d: depth,
       });

@@ -1,12 +1,12 @@
 import { THREE, rng } from "./kit.js";
 
 // Folded leaf sprays around a small shaded core. No alpha cards or per-tree meshes.
-export function crownGeometry(seed, count = 76) {
+export function crownGeometry(seed, count = 126) {
   const random = rng(seed),
     positions = [],
     normals = [],
     colors = [];
-  const core = new THREE.IcosahedronGeometry(0.58, 1);
+  const core = new THREE.IcosahedronGeometry(0.43, 1);
   const cp = core.attributes.position;
   for (let i = 0; i < cp.count; i++) {
     const x = cp.getX(i),
@@ -30,14 +30,14 @@ export function crownGeometry(seed, count = 76) {
       a = i * 2.39996 + seed,
       rad = Math.sqrt(1 - yy * yy),
       n = new THREE.Vector3(Math.cos(a) * rad, yy, Math.sin(a) * rad);
-    const center = n.clone().multiplyScalar(0.68 + random() * 0.26);
+    const center = n.clone().multiplyScalar(0.51 + random() * 0.43);
     const tangent = new THREE.Vector3(
       -Math.sin(a),
       0.2 * (random() - 0.5),
       Math.cos(a),
     ).normalize();
-    const length = 0.23 + random() * 0.18,
-      width = 0.12 + random() * 0.075;
+    const length = 0.15 + random() * 0.13,
+      width = 0.065 + random() * 0.055;
     const axis = new THREE.Vector3().crossVectors(n, tangent).normalize();
     const base = center.clone().addScaledVector(axis, -length * 0.6),
       tip = center.clone().addScaledVector(axis, length),

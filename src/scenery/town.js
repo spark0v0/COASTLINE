@@ -1,6 +1,6 @@
 import { THREE, rng } from "./kit.js";
 import { buildModernArchitecture } from "./architecture.js";
-import { sportBodyGeometry } from "../vehicle-geometry.js";
+import { sportBodyGeometry, sportCanopyGeometry } from "../vehicle-geometry.js";
 
 // The building kit shared by the old town and the coastal strip, plus the
 // street furniture that gives the town its life.
@@ -122,6 +122,10 @@ function buildStreetLife(S) {
           // Contemporary coupe silhouette, shared geometry with the hero vehicle.
           const col = carCols[Math.floor(r() * 4)];
           b.geometries.parkedCoupe ||= sportBodyGeometry();
+          if (!b.geometries.parkedCanopy) {
+            b.geometries.parkedCanopy = sportCanopyGeometry();
+            b.geometries.parkedCanopy.clearGroups();
+          }
           b.add(
             "parkedCoupe",
             col,
@@ -130,10 +134,10 @@ function buildStreetLife(S) {
             [0, -yaw, 0],
           );
           b.add(
-            "softSlab",
+            "parkedCanopy",
             "#304750",
-            [x, y + 1.03, z],
-            [1.24, 0.48, 1.75],
+            [x, y, z],
+            [0.86, 0.95, 0.86],
             [0, -yaw, 0],
           );
           for (const ta of [-1.15, 1.15])

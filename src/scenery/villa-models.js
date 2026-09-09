@@ -6,7 +6,22 @@ export function buildVilla(S, h) {
   const b = S.batch,
     W = h.w,
     D = h.d,
-    y = S.world.height(h.x, h.z);
+    terrain = S.world.height(h.x, h.z);
+  const hc = Math.cos(h.yaw),
+    hs = Math.sin(h.yaw);
+  const y =
+    Math.max(
+      terrain,
+      ...[-1, 1].flatMap((a) =>
+        [-1, 1].map((b) =>
+          S.world.height(
+            h.x + a * W * 0.48 * hc - b * D * 0.48 * hs,
+            h.z + a * W * 0.48 * hs + b * D * 0.48 * hc,
+          ),
+        ),
+      ),
+    ) + 0.04;
+  h.foundationY = y;
   const road = S.world.nearestRoad(h.x, h.z);
   const front =
     -(road.x - h.x) * Math.sin(h.yaw) + (road.z - h.z) * Math.cos(h.yaw);
@@ -28,9 +43,9 @@ export function buildVilla(S, h) {
     curtain: "#b6b3a5",
   };
   S.villaGlass ||= new THREE.MeshPhysicalMaterial({
-    color: "#57747c",
-    metalness: 0.23,
-    roughness: 0.22,
+    color: "#425660",
+    metalness: 0.12,
+    roughness: 0.18,
     clearcoat: 1,
     clearcoatRoughness: 0.17,
     envMapIntensity: 0.9,
@@ -89,7 +104,21 @@ export function buildVilla(S, h) {
     B = -D / 2 + 0.3,
     depth = F - B;
   // Recessed dark plinth, pale slab and stone rear wall anchor the building.
-  box(stone, 0, -0.18, 0, W, 0.4, D, true);
+  // Thin occupied floor; individual retaining courses meet the real slope.
+  // The downhill side receives stone, without lifting a thick whole plot.
+  box(stone, 0, 0.06, 0, W, 0.16, D, true);
+  for (const side of [-1, 1]) {
+    for (let x = -W / 2 + 1; x < W / 2; x += 2) {
+      const p = point(x, 0, side * (D / 2 - 0.18));
+      const base = S.world.height(p[0], p[2]) - y - 0.12;
+      box(stone, x, base, side * (D / 2 - 0.18), 2.02, 0.1 - base, 0.36);
+    }
+    for (let z = -D / 2 + 1; z < D / 2; z += 2) {
+      const p = point(side * (W / 2 - 0.18), 0, z);
+      const base = S.world.height(p[0], p[2]) - y - 0.12;
+      box(stone, side * (W / 2 - 0.18), base, z, 0.36, 0.1 - base, 2.02);
+    }
+  }
   box(reveal, 0, 0.22, 0, W - 0.18, 0.1, D - 0.18);
   box(wall, 0, 0.32, B + 0.22, W - 0.2, 2.85, 0.44);
   for (const side of [-1, 1]) {
@@ -151,9 +180,9 @@ export function buildVilla(S, h) {
     h.h = 6.15;
   } else {
     // Offset upper wing: the opposite side is a genuinely open terrace.
-    const U = W * 0.62,
+    const U = W * (style === 1 ? 0.51 : 0.67),
       ux = (style === 0 ? -1 : 1) * W * 0.16,
-      ud = D * 0.77,
+      ud = D * (style === 1 ? 0.65 : 0.81),
       uz = -D * 0.085;
     box(wall, ux, 3.42, uz, U, 2.82, ud, true);
     const front = uz + ud / 2;
@@ -161,6 +190,29 @@ export function buildVilla(S, h) {
     // Glazing is placed just ahead of the wall; surrounding jambs carry depth.
     window(ux, 3.98, front + 0.035, U * 0.7, 1.93);
     box(wall, ux, 6.24, uz, U + 0.28, 0.24, ud + 0.25, true);
+    if (style === 1) {
+      // A single inclined roof plane gives this house a different skyline.
+      // Solid end fascias carry the pitch, instead of decorative rooftop boxes.
+      const slope = 0.095;
+      const roofRotation = new THREE.Euler().setFromQuaternion(
+        new THREE.Quaternion()
+          .setFromAxisAngle(new THREE.Vector3(0, 1, 0), -yaw)
+          .multiply(
+            new THREE.Quaternion().setFromAxisAngle(
+              new THREE.Vector3(1, 0, 0),
+              -slope,
+            ),
+          ),
+      );
+      b.add(
+        "box",
+        wall,
+        point(ux, 6.64, uz),
+        [U + 0.72, 0.16, ud + 0.66],
+        [roofRotation.x, roofRotation.y, roofRotation.z],
+      );
+      box(wood, ux, 6.48, uz + ud / 2, U, 0.2, 0.18);
+    }
     box(stone, ux, 6.48, uz - ud / 2 + 0.14, U, 0.28, 0.24);
     const terraceX = -Math.sign(ux) * W * 0.34;
     pergola(terraceX, 3.42, 0.08, W * 0.25, D * 0.7);
@@ -170,6 +222,7 @@ export function buildVilla(S, h) {
   }
   // No commercial banner on private homes.
   h.residential = true;
+  h.h += y - terrain;
   function rail(x, yy, z, w) {
     box(frame, x, yy + 0.98, z, w, 0.035, 0.045);
     box(frame, x, yy + 0.26, z, w, 0.025, 0.035);

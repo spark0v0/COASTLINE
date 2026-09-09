@@ -26,8 +26,8 @@ export class GameRenderer {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene = new THREE.Scene();
     // Warm coastal sunlight with neutral whites and a cool atmospheric fill.
-    this.scene.fog = new THREE.FogExp2(DAYLIGHT.horizon, 0.00059);
-    this.camera = new THREE.PerspectiveCamera(57, 1, 0.18, 8000);
+    this.scene.fog = new THREE.FogExp2(DAYLIGHT.horizon, 0.00044);
+    this.camera = new THREE.PerspectiveCamera(54, 1, 0.18, 8000);
     this.camera.position.set(world.spawn.x + 12, 8, world.spawn.z - 12);
     this.look = new THREE.Vector3(world.spawn.x, 3, world.spawn.z);
     this.scene.add(
@@ -193,7 +193,7 @@ export class GameRenderer {
     this.sun.shadow.mapSize.set(low ? 1024 : 2048, low ? 1024 : 2048);
     this.sun.shadow.map?.dispose();
     this.sun.shadow.map = null;
-    this.scene.fog.density = low ? 0.0014 : 0.00059;
+    this.scene.fog.density = low ? 0.0014 : 0.00044;
     this.scenery.setQuality(low);
     this.resize();
   }
@@ -205,10 +205,10 @@ export class GameRenderer {
     const fx = Math.sin(car.yaw),
       fz = -Math.cos(car.yaw),
       speed = car.speed,
-      back = 8.4 + speed * 0.055;
+      back = 8.6 + speed * 0.045;
     let eye = new THREE.Vector3(
       car.x - fx * back,
-      car.y + 3.15 + speed * 0.021,
+      car.y + 2.65 + speed * 0.019,
       car.z - fz * back,
     );
     let target = new THREE.Vector3(
@@ -255,7 +255,7 @@ export class GameRenderer {
     this.camera.lookAt(this.look);
     this.camera.fov = damp(
       this.camera.fov,
-      57 + speed * 0.045 + (car.boost ? 7 : 0),
+      54 + speed * 0.065 + (car.boost ? 5 : 0),
       4,
       dt,
     );

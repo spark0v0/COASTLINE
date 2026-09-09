@@ -39,13 +39,13 @@ export function landscapeMaterial(art) {
       float large=landNoise(p*.016)*.65+landNoise(p*.043+17.)*.35;
       float fine=landNoise(p*2.3)*.6+landNoise(p*7.1)*.4;
       // Linear-light palette: sage green, sunlit meadow, warm dry-earth pockets.
-      vec3 grass=mix(vec3(.07,.13,.07),vec3(.155,.215,.105),large);
+      vec3 grass=mix(vec3(.045,.095,.038),vec3(.135,.20,.065),large);
       float grassGrain=texture2D(landGrass,p*.35).r*.62+
         texture2D(landGrass,mat2(.8,-.6,.6,.8)*p*1.7).r*.38;
       grass*=.81+fine*.12+grassGrain*.34;
       float dry=smoothstep(.57,.79,landNoise(p*.067+landNoise(p*.021)*3.));
       vec3 soil=mix(vec3(.23,.205,.145),vec3(.31,.275,.195),large);
-      grass=mix(grass,soil,dry*.48);
+      grass=mix(grass,soil,dry*.34);
       grass=mix(soil,grass,smoothstep(.1,.9,vVerge));
       float rock=smoothstep(.2,.61,1.-normalize(vSlope).y);
       vec3 weights=pow(abs(normalize(vSlope)),vec3(4.));weights/=dot(weights,vec3(1.));

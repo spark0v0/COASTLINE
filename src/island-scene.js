@@ -22,6 +22,7 @@ import { buildOpenSpaces } from "./scenery/open-spaces.js";
 import { prepareScenicRoute } from "./scenic-route.js";
 import { buildScenicGardens } from "./scenery/scenic-gardens.js";
 import { finishGroundPatches } from "./scenery/ground-patches.js";
+import { buildScenicCoast } from "./scenery/scenic-coast.js";
 
 // Orchestrator: regional art layers share the physics height field and road
 // data. Each region builder lives in src/scenery/<region>.js.
@@ -47,6 +48,7 @@ export class IslandScenery extends Scenery {
     buildLakePark(this);
     buildVillaGardens(this);
     buildScenicGardens(this);
+    buildScenicCoast(this);
     dressFrontages(this);
     buildRoadsideCourts(this);
     buildStreetscape(this);
