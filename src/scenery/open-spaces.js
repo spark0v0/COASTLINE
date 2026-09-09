@@ -1,6 +1,7 @@
 import { THREE } from "./kit.js";
 import { ResortKit } from "./resort-kit.js";
 import { placeOnVerge } from "./verge-placement.js";
+import { groundPath, groundBed, connectGarden } from "./ground-patches.js";
 
 const THEMES = [
   { kind: "tennis", name: "棕榈网球俱乐部", w: 21, d: 34, max: 5 },
@@ -63,10 +64,12 @@ export function buildOpenSpaces(S) {
           w.openSpaces.push(site);
           counts[theme.kind]++;
           const k = new ResortKit(S, site);
+          k.followTerrain = theme.kind !== "tennis";
           if (theme.kind === "tennis") tennis(k);
           else if (theme.kind === "orchard") orchard(k);
           else if (theme.kind === "allotment") allotment(k);
           else park(k);
+          site.connected = theme.kind !== "tennis" && connectGarden(S, site);
           placed = true;
           break;
         }
@@ -101,18 +104,19 @@ function ground(k, mat) {
   // Raised scenic areas are explicitly bounded so cars cannot clip the surface.
   k.box(k.stone, 0, -0.72, 0, k.site.w, 0.78, k.site.d, true);
   k.box(mat, 0, 0.06, 0, k.site.w - 0.2, 0.045, k.site.d - 0.2);
-  k.solid(0, 0, k.site.w, k.site.d, 0.12);
 }
 function gate(k, label) {
   const z = k.site.d / 2 - 0.6;
   for (const x of [-2.1, 2.1]) {
     k.box(k.stone, x, 0.12, z, 0.34, 1.55, 0.34, true);
+    k.solid(x, z, 0.34, 0.34, 1.67);
     k.planter(x + Math.sign(x) * 1.5, z, 1.6);
   }
   k.sign(label, 3.5, 1.26, z + 0.1, 2.1, 0.48, "#586d61");
 }
 function hedge(k, x, z, len) {
   k.box(k.stone, x, 0.12, z, len, 0.26, 0.8, true);
+  k.solid(x, z, len, 0.8, 1.1);
   for (let i = 0; i < Math.ceil(len / 0.8); i++)
     k.add(
       "foliage" + (i % 3),
@@ -127,6 +131,9 @@ function hedge(k, x, z, len) {
     );
 }
 function pergola(k, x, z, w = 5, d = 3.5) {
+  for (const a of [-1, 1])
+    for (const b of [-1, 1])
+      k.solid(x + a * (w / 2 - 0.1), z + b * (d / 2 - 0.1), 0.13, 0.13, 2.87);
   for (const a of [-1, 1])
     for (const b of [-1, 1])
       k.box(
@@ -145,6 +152,17 @@ function pergola(k, x, z, w = 5, d = 3.5) {
 }
 function tennis(k) {
   ground(k, "#8c9d82");
+  // Only actual fencing blocks the car. A visible front rail closes the court.
+  for (const x of [-9.7, 9.7]) k.solid(x, 0, 0.14, 31.2, 3.3);
+  for (const z of [-15.6, 15.6]) {
+    k.solid(0, z, 19.4, 0.14, z > 0 ? 1.2 : 3.3);
+    if (z > 0) {
+      k.box(k.metal, 0, 1.15, z, 19.4, 0.06, 0.08);
+      for (const x of [-9.7, 0, 9.7])
+        k.box(k.metal, x, 0.12, z, 0.08, 1.03, 0.08);
+      k.add("plane", k.S.courtNet, 0, 0.63, z, 19.4, 1.0, 1, [0, 0, 0], false);
+    }
+  }
   k.box("#668d89", 0, 0.11, 0, 12.8, 0.018, 26.3);
   const line = (x, z, w, d) => k.box("#ecebdd", x, 0.131, z, w, 0.008, d);
   for (const x of [-5.485, 5.485]) line(x, 0, 0.06, 23.77);
@@ -181,11 +199,28 @@ function tennis(k) {
   k.sign("PALMA / TENNIS", 0, 1.0, 16.1, 3.8, 0.5);
 }
 function orchard(k) {
-  ground(k, k.S.art.get("grass", "#7d8865"));
-  k.box(k.S.art.get("paving", "#c4b598"), 0, 0.11, 0, 2.0, 0.022, 18.5);
-  for (const x of [-7.7, -3.8, 3.8, 7.7])
-    for (const z of [-5.5, 0, 5.5]) {
-      k.add("propDisc", "#918571", x, 0.14, z, 1.1, 0.04, 1.1);
+  groundPath(
+    k.S,
+    k.site,
+    [
+      [0, 10],
+      [0.55, 4],
+      [-0.45, -1],
+      [0, -7],
+    ],
+    2.15,
+    "sand",
+    "#c4b598",
+  );
+  for (const bx of [-7.7, -3.8, 3.8, 7.7])
+    for (const bz of [-5.5, 0, 5.5]) {
+      const phase = Math.sin(bx * 2.3 + bz * 0.7 + k.site.x * 0.02);
+      const x = bx + phase * 0.42,
+        z = bz + Math.cos(bx + bz) * 0.45;
+      if (bx > 7 && bz > 5) continue;
+      groundBed(k.S, k.site, x, z, 1.18, 1.0, phase);
+      const root = k.p(x, 0, z);
+      k.w.register({ type: "circle", x: root[0], z: root[2], r: 0.18 });
       k.tube(k.wood, [x, 0.15, z], [x + 0.13, 2.2, z], 0.09);
       for (let j = 0; j < 3; j++) {
         const a = j * 2.4;
@@ -195,9 +230,9 @@ function orchard(k) {
           x + Math.cos(a) * 0.52,
           2.65,
           z + Math.sin(a) * 0.52,
-          1.0,
-          1.08,
-          0.95,
+          1.0 + phase * 0.14,
+          1.08 + phase * 0.16,
+          0.95 + phase * 0.1,
           [0, a, 0],
         );
       }
@@ -217,8 +252,10 @@ function orchard(k) {
     }
   pergola(k, 0, -7.2, 4.5, 2.0);
   k.bench(0, -7.1);
+  k.solid(0, -7.1, 1.65, 0.65, 1.2);
   for (let i = 0; i < 3; i++) {
     k.box(k.wood, 2.4 + i * 0.65, 0.12, -7.3, 0.52, 0.42, 0.6, true);
+    k.solid(2.4 + i * 0.65, -7.3, 0.52, 0.6, 0.56);
     for (let j = 0; j < 4; j++)
       k.add(
         "sphere",
@@ -234,14 +271,39 @@ function orchard(k) {
   gate(k, "CITRUS / 柑橘园");
 }
 function allotment(k) {
-  ground(k, k.S.art.get("paving", "#b6b095"));
+  groundPath(
+    k.S,
+    k.site,
+    [
+      [0, 8.4],
+      [2.45, 4],
+      [2.45, -1],
+      [0, -6.1],
+    ],
+    2.2,
+  );
+  groundPath(
+    k.S,
+    k.site,
+    [
+      [-8, 4],
+      [0, 3.4],
+      [8, 4],
+    ],
+    1.5,
+    "sand",
+    "#b6b095",
+  );
   for (const x of [-5.8, 0, 5.8])
     for (const z of [-3.8, 1.1]) {
-      k.box(k.wood, x, 0.12, z, 3.8, 0.38, 2.5, true);
-      k.box("#716653", x, 0.51, z, 3.5, 0.025, 2.2);
+      const length = x < 0 ? 3.5 : x > 0 ? 4.3 : 3.0;
+      groundBed(k.S, k.site, x, z, length * 0.63, 1.65, x + z);
+      k.box(k.wood, x, 0.12, z, length, 0.38, 2.5, true);
+      k.box("#716653", x, 0.51, z, length - 0.2, 0.025, 2.2);
+      k.solid(x, z, length, 2.5, 0.54);
       for (let a = 0; a < 5; a++)
         for (let b = 0; b < 3; b++) {
-          const xx = x - 1.35 + a * 0.67,
+          const xx = x - (length - 0.6) / 2 + (a * (length - 0.6)) / 4,
             zz = z - 0.7 + b * 0.7;
           k.add(
             "foliage" + b,
@@ -269,6 +331,7 @@ function allotment(k) {
   // Open potting shelter, trellises and a workbench.
   pergola(k, 0, -6.05, 5.4, 2.4);
   k.box(k.wood, 0, 0.12, -6.05, 2.8, 0.81, 0.72, true);
+  k.solid(0, -6.05, 2.8, 0.72, 0.95);
   for (const x of [-8, 8]) {
     for (let j = 0; j < 6; j++)
       k.box(k.wood, x, 0.15, -4 + j * 0.9, 0.055, 2.05, 0.055);
@@ -277,10 +340,32 @@ function allotment(k) {
   gate(k, "GARDEN / 四季花圃");
 }
 function park(k) {
-  ground(k, k.S.art.get("grass", "#89936d"));
-  k.box(k.S.art.get("paving", "#c7c3b0"), 0, 0.11, 0, 3.2, 0.025, 19.5);
+  groundPath(
+    k.S,
+    k.site,
+    [
+      [0, 10.4],
+      [1.7, 5],
+      [2.8, -1],
+      [2.5, -5],
+      [0, -7],
+    ],
+    2.6,
+  );
+  groundPath(
+    k.S,
+    k.site,
+    [
+      [-6.8, 3.2],
+      [0, 5.1],
+      [6.8, 3.2],
+    ],
+    2.1,
+  );
+  groundBed(k.S, k.site, 0, -3.2, 3.2, 2.7, 0.7);
   k.add("propDisc", k.stone, 0, 0.17, -3.2, 3.1, 0.13, 3.1);
   k.box(k.white, 0, 0.24, -3.2, 1.5, 0.48, 1.5, true);
+  k.solid(0, -3.2, 2.6, 2.6, 4.3);
   // Twin bronze loops provide a recognizable, taller focal point.
   k.add(
     "propRing",
@@ -308,6 +393,8 @@ function park(k) {
     pergola(k, x, 3.2, 5.2, 4.1);
     k.table(x, 3.1);
     k.bench(x, -3.4);
+    k.solid(x, -3.4, 1.65, 0.65, 1.2);
+    k.solid(x, 3.1, 3.0, 2.5, 1.2);
     hedge(k, x, -7.7, 6.6);
   }
   k.umbrella(-6.8, 3.1);

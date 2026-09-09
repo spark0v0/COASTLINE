@@ -94,8 +94,25 @@ export function buildGroundCover(S) {
     ...(w.streetscape || []),
     ...(w.gardens || []),
     ...(w.openSpaces || []),
+    ...(w.scenicBeds || []),
   ];
   const clear = (x, z, margin) => {
+    for (const p of w.gardenPaths || []) {
+      const dx = p.b.x - p.a.x,
+        dz = p.b.z - p.a.z;
+      const t = Math.max(
+        0,
+        Math.min(
+          1,
+          ((x - p.a.x) * dx + (z - p.a.z) * dz) / (dx * dx + dz * dz || 1),
+        ),
+      );
+      if (
+        Math.hypot(x - p.a.x - dx * t, z - p.a.z - dz * t) <
+        p.width / 2 + margin
+      )
+        return false;
+    }
     if (lakeDistance(x, z) < 1.62) return false;
     if (!w.inside(x, z) || w.height(x, z) < 1.1) return false;
     if (

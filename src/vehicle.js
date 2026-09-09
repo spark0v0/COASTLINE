@@ -11,8 +11,8 @@ export class VehicleView {
     this.wheels = [];
     const paint = new THREE.MeshPhysicalMaterial({
       color: "#267c8b",
-      metalness: 0.66,
-      roughness: 0.2,
+      metalness: 0.46,
+      roughness: 0.24,
       clearcoat: 1,
       clearcoatRoughness: 0.12,
       envMapIntensity: 1.25,
@@ -23,7 +23,7 @@ export class VehicleView {
       metalness: 0.4,
     });
     const glass = new THREE.MeshPhysicalMaterial({
-      color: "#153b49",
+      color: "#34474e",
       metalness: 0.28,
       roughness: 0.14,
       clearcoat: 1,
@@ -233,7 +233,7 @@ export class VehicleView {
         steer.add(wheel);
         const tireGeo = new THREE.LatheGeometry(
           [
-            [0, -0.105],
+            [0.266, -0.105],
             [0.26, -0.125],
             [0.325, -0.12],
             [0.363, -0.078],
@@ -242,13 +242,20 @@ export class VehicleView {
             [0.363, 0.078],
             [0.325, 0.12],
             [0.26, 0.125],
-            [0, 0.105],
+            [0.266, 0.105],
           ].map(([r, y]) => new THREE.Vector2(r, y)),
           40,
         );
         tireGeo.rotateZ(Math.PI / 2);
         mesh(tireGeo, rubber, wheel);
-        const rimGeo = new THREE.CylinderGeometry(0.266, 0.266, 0.266, 40, 1);
+        const rimGeo = new THREE.CylinderGeometry(
+          0.266,
+          0.266,
+          0.232,
+          40,
+          1,
+          true,
+        );
         rimGeo.rotateZ(Math.PI / 2);
         mesh(rimGeo, dark, wheel);
         const disc = new THREE.CylinderGeometry(0.205, 0.205, 0.018, 24);

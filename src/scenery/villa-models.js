@@ -13,7 +13,7 @@ export function buildVilla(S, h) {
   const yaw = h.yaw + (front < 0 ? Math.PI : 0);
   const c = Math.cos(yaw),
     s = Math.sin(yaw),
-    style = h.seed % 3;
+    style = h.scenicStyle ?? h.seed % 3;
   const point = (x, yy, z) => [
     h.x + x * c - z * s,
     y + yy,

@@ -342,6 +342,13 @@ class Game {
       this.startRace();
     };
     $("free-button").onclick = () => this.freeDrive();
+    $("scenic-drive-button").onclick = () => {
+      this.car.reset(this.world.scenicRoute.start);
+      this.effects.reset();
+      this.snap = true;
+      this.freeDrive();
+      this.toast("晴湾花园路 · 沿金色路线向东，到海岸路口左转");
+    };
     $("retry-button").onclick = () => {
       this.scriptedDriver = null;
       this.startRace();
@@ -533,6 +540,16 @@ class Game {
   drawMap() {
     const ctx = this.ctx;
     ctx.drawImage(this.mapBase, 0, 0);
+    if (!this.activeRace() && this.world.scenicRoute) {
+      ctx.beginPath();
+      this.world.scenicRoute.points.forEach((p, i) => {
+        const q = this.mapPoint(p.x, p.z);
+        i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y);
+      });
+      ctx.lineWidth = 2.1;
+      ctx.strokeStyle = "#dbc691";
+      ctx.stroke();
+    }
     if (this.activeRace()) {
       ctx.beginPath();
       this.selectedEvent.route.forEach((p, i) => {

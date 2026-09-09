@@ -141,10 +141,15 @@ export class ArtMaterials {
         `#include <begin_vertex>
         vec4 artLocal=vec4(transformed,1.0); vec3 artNormal=normal;
         #ifdef USE_INSTANCING
-          artLocal=instanceMatrix*artLocal; artNormal=mat3(instanceMatrix)*artNormal;
+          artLocal=instanceMatrix*artLocal;
+          mat3 artIM=mat3(instanceMatrix);
+          artNormal/=max(vec3(dot(artIM[0],artIM[0]),dot(artIM[1],artIM[1]),dot(artIM[2],artIM[2])),vec3(1e-8));
+          artNormal=artIM*artNormal;
         #endif
         vArtWorld=(modelMatrix*artLocal).xyz;
-        vArtNormal=normalize(mat3(modelMatrix)*artNormal);`,
+        mat3 artMM=mat3(modelMatrix);
+        artNormal/=max(vec3(dot(artMM[0],artMM[0]),dot(artMM[1],artMM[1]),dot(artMM[2],artMM[2])),vec3(1e-8));
+        vArtNormal=normalize(artMM*artNormal);`,
       );
       shader.fragmentShader = shader.fragmentShader.replace(
         "#include <common>",

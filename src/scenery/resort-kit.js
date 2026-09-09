@@ -50,10 +50,12 @@ export class ResortKit {
     this.fabric = S.placeMaterials.canvas;
   }
   p(x, y, z) {
+    const xx = this.site.x + x * this.c - z * this.s,
+      zz = this.site.z + x * this.s + z * this.c;
     return [
-      this.site.x + x * this.c - z * this.s,
-      this.site.y + y,
-      this.site.z + x * this.s + z * this.c,
+      xx,
+      (this.followTerrain ? this.w.height(xx, zz) : this.site.y) + y,
+      zz,
     ];
   }
   add(kind, mat, x, y, z, w, h, d, rot = [0, 0, 0], shadow = true) {
@@ -94,7 +96,11 @@ export class ResortKit {
       z: p[2],
       w,
       d,
-      h: h + Math.max(0, this.site.y - this.w.height(p[0], p[2])),
+      h:
+        h +
+        (this.followTerrain
+          ? 0
+          : Math.max(0, this.site.y - this.w.height(p[0], p[2]))),
       yaw: this.site.yaw,
     });
   }

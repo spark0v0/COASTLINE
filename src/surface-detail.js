@@ -4,7 +4,7 @@ export function addSurfaceRelief(shader, expression, amount) {
   shader.fragmentShader = shader.fragmentShader.replace(
     "#include <normal_fragment_maps>",
     `#include <normal_fragment_maps>
-    float surfaceHeight=(${expression})*${Number(amount).toFixed(5)};
+    float surfaceHeight=(${expression})*${Number(amount).toFixed(5)}*(1.0-smoothstep(45.0,130.0,length(vViewPosition)));
     vec3 surfaceDX=dFdx(-vViewPosition),surfaceDY=dFdy(-vViewPosition);
     vec3 surfaceR1=cross(surfaceDY,normal),surfaceR2=cross(normal,surfaceDX);
     float surfaceDet=dot(surfaceDX,surfaceR1);

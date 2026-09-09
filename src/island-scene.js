@@ -19,11 +19,15 @@ import { dressFrontages } from "./scenery/frontages.js";
 import { buildVillaGardens } from "./scenery/villa-gardens.js";
 import { buildContactShadows } from "./scenery/contact-shadows.js";
 import { buildOpenSpaces } from "./scenery/open-spaces.js";
+import { prepareScenicRoute } from "./scenic-route.js";
+import { buildScenicGardens } from "./scenery/scenic-gardens.js";
+import { finishGroundPatches } from "./scenery/ground-patches.js";
 
 // Orchestrator: regional art layers share the physics height field and road
 // data. Each region builder lives in src/scenery/<region>.js.
 export class IslandScenery extends Scenery {
   buildAll() {
+    prepareScenicRoute(this.world);
     this.art = new ArtMaterials();
     this.low = false;
     this.rng511 = rng(511);
@@ -42,11 +46,13 @@ export class IslandScenery extends Scenery {
     buildResortLife(this);
     buildLakePark(this);
     buildVillaGardens(this);
+    buildScenicGardens(this);
     dressFrontages(this);
     buildRoadsideCourts(this);
     buildStreetscape(this);
     buildOpenSpaces(this);
     buildGroundCover(this);
+    finishGroundPatches(this);
     buildContactShadows(this);
   }
   update(time, car) {

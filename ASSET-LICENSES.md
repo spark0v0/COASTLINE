@@ -64,6 +64,8 @@ Prettier 3.9.6 仅用于源码格式化，使用 MIT 许可，来源 https://git
 
 ## 住宅主体与渲染品质修订
 
+自然布局修订（2026-09-09）：新增 ground-patches、scenic-gardens、scenic-route 模块由项目内代码制作，复用既有纹理与几何。真实画面 scenic-route-2026-09-09.jpg 为本项目本地浏览器截图，没有使用生成图片或外部照片替代游戏画面；未新增资源下载或第三方依赖。
+
 道路外景观扩充：网球场、围网纹理、柑橘园、园艺种植箱、工作棚和双环雕塑均由项目内代码制作，入口文件为 src/scenery/open-spaces.js。围网通过 Canvas 本地生成，其他材质复用本记录已有资源；没有新增下载、第三方模型或依赖。
 
 新增的三类住宅主体、叶簇树冠、W 形护栏、接触暗部贴图、统一日照配置与微表面法线代码均在项目内制作。复用已记录的 Poly Haven 贴图与 Three.js 几何工具，没有新增下载或依赖。相关源码分别位于 src/scenery/villa-models.js、tree-crowns.js、contact-shadows.js、roads.js，以及 src/daylight.js、surface-detail.js。

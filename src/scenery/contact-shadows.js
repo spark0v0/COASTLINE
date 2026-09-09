@@ -24,7 +24,7 @@ export function buildContactShadows(S) {
     color: "#28382f",
     map: texture,
     transparent: true,
-    opacity: 0.26,
+    opacity: 0.18,
     depthWrite: false,
     side: THREE.DoubleSide,
     polygonOffset: true,
