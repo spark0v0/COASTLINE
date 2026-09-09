@@ -1,264 +1,216 @@
 import { THREE } from "./kit.js";
+import { groundPath, groundBed } from "./ground-patches.js";
 
-// Three solid residential silhouettes, all contained by the existing plot.
-// Windows sit inside structural reveals; roofs, walls and timber have distinct jobs.
+// Three complete residence plans. First-floor volumes are also the colliders:
+// the open forecourt of the L house is genuinely accessible.
 export function buildVilla(S, h) {
-  const b = S.batch,
+  const w = S.world,
+    b = S.batch,
     W = h.w,
     D = h.d,
-    terrain = S.world.height(h.x, h.z);
-  const hc = Math.cos(h.yaw),
-    hs = Math.sin(h.yaw);
+    road = w.nearestRoad(h.x, h.z);
+  const front =
+    -(road.x - h.x) * Math.sin(h.yaw) + (road.z - h.z) * Math.cos(h.yaw);
+  const yaw = h.yaw + (front < 0 ? Math.PI : 0),
+    c = Math.cos(yaw),
+    s = Math.sin(yaw),
+    style = h.scenicStyle ?? h.seed % 3;
+  const site = { x: h.x, z: h.z, yaw };
+  const world = (x, z) => ({ x: h.x + x * c - z * s, z: h.z + x * s + z * c });
+  const terrain = w.height(h.x, h.z);
   const y =
     Math.max(
       terrain,
       ...[-1, 1].flatMap((a) =>
-        [-1, 1].map((b) =>
-          S.world.height(
-            h.x + a * W * 0.48 * hc - b * D * 0.48 * hs,
-            h.z + a * W * 0.48 * hs + b * D * 0.48 * hc,
-          ),
-        ),
+        [-1, 1].map((bb) => {
+          const p = world(a * W * 0.47, bb * D * 0.47);
+          return w.height(p.x, p.z);
+        }),
       ),
-    ) + 0.04;
-  h.foundationY = y;
-  const road = S.world.nearestRoad(h.x, h.z);
-  const front =
-    -(road.x - h.x) * Math.sin(h.yaw) + (road.z - h.z) * Math.cos(h.yaw);
-  const yaw = h.yaw + (front < 0 ? Math.PI : 0);
-  const c = Math.cos(yaw),
-    s = Math.sin(yaw),
-    style = h.scenicStyle ?? h.seed % 3;
-  const point = (x, yy, z) => [
-    h.x + x * c - z * s,
-    y + yy,
-    h.z + x * s + z * c,
-  ];
-  const materials = {
-    wall: S.art.get("stucco", ["#e3dfd4", "#d8d4c8", "#e8e5dd"][style], 0.82),
-    stone: S.art.get("limestone", "#c6bfae", 0.91),
-    wood: S.art.get("wood", "#897055", 0.77),
-    frame: "#35474c",
-    reveal: "#807c71",
-    curtain: "#b6b3a5",
+    ) + 0.025;
+  const point = (x, yy, z) => {
+    const p = world(x, z);
+    return [p.x, y + yy, p.z];
   };
-  S.villaGlass ||= new THREE.MeshPhysicalMaterial({
-    color: "#425660",
-    metalness: 0.12,
-    roughness: 0.18,
+  const wall = S.art.get(
+      "stucco",
+      ["#ebe6da", "#e6e4dc", "#e3ddce"][style],
+      0.88,
+    ),
+    stone = S.art.get("stone", "#c6bfae", 0.94),
+    wood = S.art.get("wood", "#8d7257", 0.79),
+    metal = "#33434a";
+  S.residenceGlass ||= new THREE.MeshPhysicalMaterial({
+    color: "#283f49",
+    roughness: 0.17,
+    metalness: 0.24,
     clearcoat: 1,
-    clearcoatRoughness: 0.17,
-    envMapIntensity: 0.9,
+    envMapIntensity: 0.85,
   });
-  const box = (mat, x, yy, z, w, hh, d, soft = false) => {
-    b.add(
-      soft ? "softSlab" : "box",
-      mat,
-      point(x, yy + hh / 2, z),
-      [w, hh, d],
-      [0, -yaw, 0],
-    );
-  };
-  const { wall, stone, wood, frame, reveal, curtain } = materials;
-  const window = (x, yy, z, w, hh) => {
-    // Backing, glazing, deep side jambs, sill and slim mullions.
-    box(reveal, x, yy - 0.1, z - 0.11, w + 0.3, hh + 0.23, 0.2);
-    box(S.villaGlass, x, yy, z + 0.005, w, hh, 0.06);
-    box(stone, x, yy - 0.16, z + 0.09, w + 0.42, 0.13, 0.42, true);
+  const box = (mat, x, yy, z, ww, hh, dd) =>
+    b.add("box", mat, point(x, yy + hh / 2, z), [ww, hh, dd], [0, -yaw, 0]);
+  const volume = (x, z, ww, dd, hh, base = 0, mat = wall) => {
+    const f = z + dd / 2;
+    if (base === 0) {
+      // Individual wall courses carry the floor down to the slope.
+      for (const side of [-1, 1])
+        for (let i = 0; i < Math.ceil(ww / 2); i++) {
+          const width = ww / Math.ceil(ww / 2),
+            xx = x - ww / 2 + width * (i + 0.5),
+            zz = z + side * (dd / 2 - 0.15),
+            p = world(xx, zz);
+          const bottom = Math.min(0.02, w.height(p.x, p.z) - y - 0.1);
+          box(stone, xx, bottom, zz, width + 0.01, 0.18 - bottom, 0.3);
+        }
+      for (const side of [-1, 1]) {
+        const p = world(x + side * (ww / 2 - 0.15), z),
+          bottom = Math.min(-0.06, w.height(p.x, p.z) - y - 0.35);
+        box(
+          stone,
+          x + side * (ww / 2 - 0.15),
+          bottom,
+          z,
+          0.3,
+          0.18 - bottom,
+          dd,
+        );
+      }
+      const p = world(x, z);
+      const solid = {
+        type: "box",
+        ...p,
+        w: ww,
+        d: dd,
+        h: hh + y - w.height(p.x, p.z),
+        yaw,
+      };
+      w.register(solid);
+      (h.groundVolumes ??= []).push(solid);
+    }
+    box(stone, x, base + 0.16, z, ww, 0.15, dd);
+    box(mat, x, base + 0.31, z - dd / 2 + 0.14, ww, hh - 0.31, 0.28);
+    for (const side of [-1, 1])
+      box(mat, x + side * (ww / 2 - 0.14), base + 0.31, z, 0.28, hh - 0.31, dd);
+    // Glazing sits in a real opening between the sill, lintel and jambs.
+    box(mat, x, base + 0.31, f - 0.14, ww, 0.48, 0.28);
+    box(mat, x, base + hh - 0.43, f - 0.14, ww, 0.43, 0.28);
+    const inset = 0.26,
+      windowW = ww - 1.0;
+    box(S.residenceGlass, x, base + 0.81, f - inset, windowW, hh - 1.29, 0.045);
     for (const side of [-1, 1])
       box(
-        wall,
-        x + side * (w / 2 + 0.11),
-        yy - 0.04,
-        z + 0.1,
-        0.18,
-        hh + 0.1,
-        0.38,
+        mat,
+        x + side * (ww / 2 - 0.25),
+        base + 0.79,
+        f - 0.14,
+        0.5,
+        hh - 1.2,
+        0.28,
       );
-    box(wall, x, yy + hh, z + 0.1, w + 0.42, 0.16, 0.38);
-    for (let j = 0; j <= Math.ceil(w / 1.3); j++)
+    const panes = Math.max(2, Math.round(windowW / 1.7));
+    for (let j = 0; j <= panes; j++)
       box(
-        frame,
-        x - w / 2 + (j * w) / Math.ceil(w / 1.3),
-        yy,
-        z + 0.06,
-        0.045,
-        hh,
-        0.07,
+        metal,
+        x - windowW / 2 + (j * windowW) / panes,
+        base + 0.8,
+        f - inset + 0.04,
+        0.035,
+        hh - 1.24,
+        0.05,
       );
-    box(frame, x, yy, z + 0.06, w, 0.04, 0.07);
-    box(frame, x, yy + hh - 0.04, z + 0.06, w, 0.04, 0.07);
-    // A few partially drawn blinds break up the broad reflection.
-    if (style === 1)
-      box(
-        curtain,
-        x - w * 0.36,
-        yy + 0.05,
-        z + 0.042,
-        w * 0.15,
-        hh - 0.1,
-        0.018,
-      );
+    box(metal, x, base + 0.79, f - inset + 0.04, windowW, 0.035, 0.065);
+    box(metal, x, base + hh - 0.45, f - inset + 0.04, windowW, 0.035, 0.065);
+    box(stone, x, base + 0.71, f - 0.03, windowW + 0.22, 0.09, 0.48);
+    // Roof is a slender projecting slab with an inset fascia, not a thick frame.
+    box(metal, x, base + hh, z, ww + 0.28, 0.07, dd + 0.24);
+    box(wall, x, base + hh + 0.07, z, ww + 0.42, 0.14, dd + 0.36);
+    box(mat, x, base + hh + 0.21, z - dd / 2 + 0.12, ww, 0.2, 0.25);
+    return f;
   };
-  const F = D / 2 - 0.5,
-    B = -D / 2 + 0.3,
-    depth = F - B;
-  // Recessed dark plinth, pale slab and stone rear wall anchor the building.
-  // Thin occupied floor; individual retaining courses meet the real slope.
-  // The downhill side receives stone, without lifting a thick whole plot.
-  box(stone, 0, 0.06, 0, W, 0.16, D, true);
-  for (const side of [-1, 1]) {
-    for (let x = -W / 2 + 1; x < W / 2; x += 2) {
-      const p = point(x, 0, side * (D / 2 - 0.18));
-      const base = S.world.height(p[0], p[2]) - y - 0.12;
-      box(stone, x, base, side * (D / 2 - 0.18), 2.02, 0.1 - base, 0.36);
-    }
-    for (let z = -D / 2 + 1; z < D / 2; z += 2) {
-      const p = point(side * (W / 2 - 0.18), 0, z);
-      const base = S.world.height(p[0], p[2]) - y - 0.12;
-      box(stone, side * (W / 2 - 0.18), base, z, 0.36, 0.1 - base, 2.02);
-    }
-  }
-  box(reveal, 0, 0.22, 0, W - 0.18, 0.1, D - 0.18);
-  box(wall, 0, 0.32, B + 0.22, W - 0.2, 2.85, 0.44);
-  for (const side of [-1, 1]) {
-    box(wall, side * (W / 2 - 0.27), 0.32, 0, 0.44, 2.85, D - 0.4);
-    // Shallow stone bands articulate side walls, not another glass box.
-    box(stone, side * (W / 2 - 0.025), 0.34, -D * 0.18, 0.07, 2.7, D * 0.32);
-    box(
-      S.villaGlass,
-      side * (W / 2 + 0.025),
-      1.03,
-      -D * 0.17,
-      0.055,
-      1.4,
-      D * 0.23,
+  S.replacedResidenceBounds ||= new Set();
+  S.replacedResidenceBounds.add(h);
+  let doorX, doorZ, top;
+  if (style === 0) {
+    // L-plan garden house, sheltered by the side wing; courtyard stays open.
+    volume(0, -D * 0.23, W * 0.96, D * 0.49, 3.25);
+    volume(-W * 0.32, D * 0.21, W * 0.32, D * 0.39, 3.1);
+    doorX = -W * 0.21;
+    doorZ = D * 0.015;
+    top = 3.7;
+    groundPath(
+      S,
+      site,
+      [
+        [W * 0.15, D * 0.55],
+        [W * 0.13, D * 0.2],
+        [0, D * 0.1],
+      ],
+      2.1,
+      "paving",
+      "#c6c0ae",
     );
-    for (const z of [-D * 0.285, -D * 0.055])
-      box(frame, side * (W / 2 + 0.06), 1.03, z, 0.055, 1.4, 0.035);
-    box(
-      stone,
-      side * (W / 2 + 0.06),
-      0.93,
-      -D * 0.17,
-      0.22,
-      0.09,
-      D * 0.26,
-      true,
-    );
-    for (let j = 0; j < 6; j++)
-      box(
-        wood,
-        side * (W / 2 + 0.018),
-        0.42,
-        D * 0.03 + j * 0.21,
-        0.085,
-        2.5,
-        0.065,
-      );
-  }
-  const doorX = -W * 0.3;
-  box(wood, doorX, 0.32, F - 0.11, 1.32, 2.62, 0.15);
-  box(frame, doorX + 0.41, 1.16, F, 0.035, 0.66, 0.07);
-  box(wall, -W * 0.43, 0.32, F - 0.1, W * 0.12, 2.85, 0.44);
-  box(wall, -W * 0.17, 0.32, F - 0.1, W * 0.16, 2.85, 0.44);
-  window(W * 0.19, 0.55, F - 0.2, W * 0.47, 2.33);
-  box(stone, 0, 0.32, F - 0.03, W - 0.3, 0.18, 0.25);
-  box(wall, 0, 3.05, F - 0.1, W, 0.2, 0.6, true);
-  // Thin cantilever throws a readable shadow over the recessed entrance.
-  box(wall, -W * 0.25, 2.97, F + 0.27, W * 0.4, 0.18, 0.82, true);
-  box(frame, doorX - 0.86, 1.64, F + 0.16, 0.09, 0.38, 0.09, true);
-  box("#ddd2a9", doorX - 0.86, 1.71, F + 0.215, 0.065, 0.18, 0.012);
-  box(stone, 0, 3.19, 0, W + 0.18, 0.23, D + 0.08, true);
-  if (style === 2) {
-    // Low pavilion with a sheltered roof terrace and one tall stone chimney.
-    box(wall, 0, 3.42, -D * 0.26, W - 0.5, 0.42, D * 0.45, true);
-    box(stone, -W * 0.33, 3.42, -D * 0.28, 1.1, 1.65, 1.05, true);
-    pergola(W * 0.14, 3.44, D * 0.16, W * 0.52, D * 0.38);
-    seats(W * 0.08, 3.44, D * 0.19);
-    rail(0, 3.44, F - 0.15, W - 0.9);
-    h.h = 6.15;
+    groundBed(S, site, W * 0.3, D * 0.24, W * 0.12, D * 0.13, h.seed);
+  } else if (style === 1) {
+    // Tall plaster wing and a lower limestone service wing form a stepped skyline.
+    volume(-W * 0.17, -D * 0.04, W * 0.6, D * 0.83, 3.35);
+    volume(W * 0.32, -D * 0.22, W * 0.29, D * 0.46, 3.65, 0, stone);
+    volume(-W * 0.19, -D * 0.09, W * 0.56, D * 0.68, 2.8, 3.56);
+    doorX = W * 0.09;
+    doorZ = D * 0.375;
+    top = 6.75;
+    for (const xx of [-W * 0.37, W * 0.05])
+      box(metal, xx, 3.58, D * 0.383, 0.045, 1, 0.045);
+    box(metal, -W * 0.16, 4.58, D * 0.383, W * 0.43, 0.035, 0.05);
+    box(wood, W * 0.31, 2.85, D * 0.12, W * 0.3, 0.13, D * 0.22);
+    box(metal, W * 0.42, 0.02, D * 0.22, 0.075, 2.84, 0.075);
+    const p = world(W * 0.42, D * 0.22);
+    w.register({ type: "circle", ...p, r: 0.07 });
   } else {
-    // Offset upper wing: the opposite side is a genuinely open terrace.
-    const U = W * (style === 1 ? 0.51 : 0.67),
-      ux = (style === 0 ? -1 : 1) * W * 0.16,
-      ud = D * (style === 1 ? 0.65 : 0.81),
-      uz = -D * 0.085;
-    box(wall, ux, 3.42, uz, U, 2.82, ud, true);
-    const front = uz + ud / 2;
-    // Cover the facade behind the inset glazing with an opening-shaped frame.
-    // Glazing is placed just ahead of the wall; surrounding jambs carry depth.
-    window(ux, 3.98, front + 0.035, U * 0.7, 1.93);
-    box(wall, ux, 6.24, uz, U + 0.28, 0.24, ud + 0.25, true);
-    if (style === 1) {
-      // A single inclined roof plane gives this house a different skyline.
-      // Solid end fascias carry the pitch, instead of decorative rooftop boxes.
-      const slope = 0.095;
-      const roofRotation = new THREE.Euler().setFromQuaternion(
-        new THREE.Quaternion()
-          .setFromAxisAngle(new THREE.Vector3(0, 1, 0), -yaw)
-          .multiply(
-            new THREE.Quaternion().setFromAxisAngle(
-              new THREE.Vector3(1, 0, 0),
-              -slope,
-            ),
-          ),
-      );
-      b.add(
-        "box",
-        wall,
-        point(ux, 6.64, uz),
-        [U + 0.72, 0.16, ud + 0.66],
-        [roofRotation.x, roofRotation.y, roofRotation.z],
-      );
-      box(wood, ux, 6.48, uz + ud / 2, U, 0.2, 0.18);
-    }
-    box(stone, ux, 6.48, uz - ud / 2 + 0.14, U, 0.28, 0.24);
-    const terraceX = -Math.sign(ux) * W * 0.34;
-    pergola(terraceX, 3.42, 0.08, W * 0.25, D * 0.7);
-    seats(terraceX, 3.42, D * 0.17);
-    rail(0, 3.42, F - 0.12, W - 0.8);
-    h.h = 6.78;
+    // Broad pavilion under a coherent inclined canopy, with a stone end wall.
+    volume(-W * 0.04, -D * 0.15, W * 0.86, D * 0.64, 3.05);
+    volume(W * 0.3, D * 0.25, W * 0.26, D * 0.28, 2.64, 0, stone);
+    doorX = -W * 0.32;
+    doorZ = D * 0.17;
+    top = 3.9;
+    b.geometries.residenceRoof ||= (() => {
+      const shape = new THREE.Shape();
+      shape.moveTo(-0.5, 0);
+      shape.lineTo(0.5, 0);
+      shape.lineTo(0.5, 0.55);
+      shape.lineTo(-0.5, 0.15);
+      shape.closePath();
+      const g = new THREE.ExtrudeGeometry(shape, {
+        depth: 1,
+        bevelEnabled: false,
+      });
+      g.translate(0, 0, -0.5);
+      return g;
+    })();
+    b.add(
+      "residenceRoof",
+      wall,
+      point(-W * 0.04, 3.22, -D * 0.15),
+      [W * 0.93, 1, D * 0.73],
+      [0, -yaw, 0],
+    );
+    box(wood, -W * 0.1, 2.83, D * 0.23, W * 0.47, 0.12, 1.12);
   }
-  // No commercial banner on private homes.
+  // Closed oak front door: no suggestion that building interiors are playable.
+  box(wood, doorX, 0.31, doorZ + 0.02, 1.02, 2.25, 0.13);
+  box(metal, doorX + 0.34, 1.13, doorZ + 0.101, 0.024, 0.58, 0.036);
+  box(stone, doorX, 0.05, doorZ + 0.33, 1.65, 0.14, 0.61);
+  box(stone, doorX, 0.19, doorZ + 0.13, 1.4, 0.12, 0.41);
+  h.h = top + y - terrain;
   h.residential = true;
-  h.h += y - terrain;
-  function rail(x, yy, z, w) {
-    box(frame, x, yy + 0.98, z, w, 0.035, 0.045);
-    box(frame, x, yy + 0.26, z, w, 0.025, 0.035);
-    for (let j = 0; j <= Math.ceil(w / 1.4); j++)
-      box(
-        frame,
-        x - w / 2 + (j * w) / Math.ceil(w / 1.4),
-        yy,
-        z,
-        0.036,
-        0.98,
-        0.036,
-      );
-  }
-  function pergola(x, yy, z, w, d) {
-    for (const side of [-1, 1]) {
-      box(
-        frame,
-        x + side * (w / 2 - 0.09),
-        yy,
-        z + d / 2 - 0.13,
-        0.085,
-        2.45,
-        0.085,
-      );
-      box(wood, x + side * (w / 2 - 0.09), yy + 2.38, z, 0.12, 0.16, d + 0.13);
-    }
-    for (let j = 0; j < 10; j++)
-      box(wood, x - w / 2 + (j * w) / 9, yy + 2.53, z, 0.075, 0.075, d + 0.13);
-    box(wood, x, yy + 2.38, z - d / 2 + 0.13, w, 0.15, 0.13);
-  }
-  function seats(x, yy, z) {
-    box(wood, x, yy + 0.22, z, 1.65, 0.12, 0.76, true);
-    box("#ccc7b8", x, yy + 0.34, z, 1.55, 0.2, 0.69, true);
-    box("#ccc7b8", x, yy + 0.54, z - 0.31, 1.6, 0.34, 0.12, true);
-    box(wood, x, yy + 0.13, z + 1.02, 0.88, 0.28, 0.58, true);
-    box(stone, x, yy + 0.41, z + 1.02, 0.92, 0.065, 0.64, true);
-  }
+  h.foundationY = y;
+}
+
+export function finalizeResidences(S) {
+  if (!S.replacedResidenceBounds) return;
+  const kept = S.world.obstacles.filter(
+    (o) => !S.replacedResidenceBounds.has(o),
+  );
+  S.world.obstacles = [];
+  S.world.grid.clear();
+  kept.forEach((o) => S.world.register(o));
 }

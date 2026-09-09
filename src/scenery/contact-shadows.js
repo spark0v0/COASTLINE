@@ -64,7 +64,9 @@ export function buildContactShadows(S) {
           vertex(u, v);
       }
   };
-  for (const h of S.world.buildings) add(h.x, h.z, h.w + 3.4, h.d + 3.4, h.yaw);
+  for (const h of S.world.buildings)
+    for (const v of h.groundVolumes || [h])
+      add(v.x, v.z, v.w + 2, v.d + 2, v.yaw);
   for (const t of S.world.trees) {
     if (S.world.nearestRoad(t.x, t.z).d < 7) continue;
     const r = Math.min(4.2, 1.4 + t.h * 0.15);

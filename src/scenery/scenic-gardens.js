@@ -20,6 +20,7 @@ export function buildScenicGardens(S) {
     let site = null;
     for (const offset of [13, 16, 20]) {
       site = placeOnVerge(S.world, {
+        authored: true,
         x: frame.x + frame.nx * side * offset,
         z: frame.z + frame.nz * side * offset,
         yaw: frame.angle + (side > 0 ? Math.PI : 0),

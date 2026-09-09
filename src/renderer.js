@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { outdoorEnvironment } from "./outdoor-environment.js";
 import { IslandScenery as Scenery } from "./island-scene.js";
-import { VehicleView } from "./vehicle.js";
+import { VehicleView } from "./vehicle-asset.js";
 import { damp, clamp } from "./math.js";
 import { cameraLimit } from "./camera-collision.js";
 import { SUN_DIRECTION, DAYLIGHT } from "./daylight.js";
@@ -85,8 +85,29 @@ export class GameRenderer {
     this.makeClouds();
     this.scenery = new Scenery(this.scene, world);
     this.vehicle = new VehicleView(this.scene);
+    this.ready = Promise.all([this.vehicle.ready, this.loadDaylight()]);
     this.makeGates();
     this.resize();
+  }
+  async loadDaylight() {
+    try {
+      const { HDRLoader } = await import("three/addons/loaders/HDRLoader.js");
+      const hdr = await new HDRLoader().loadAsync(
+        "assets/environment/coast-daylight.hdr",
+      );
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      const env = pmrem.fromEquirectangular(hdr);
+      this.scene.environment = env.texture;
+      this.environment.dispose();
+      this.environment = env;
+      hdr.dispose();
+      pmrem.dispose();
+      this.scene.environmentIntensity = 0.55;
+      this.scene.environmentRotation.y = 0.65;
+    } catch (error) {
+      this.environmentError = "环境贴图未加载，使用基础日光";
+      console.warn(this.environmentError, error.message);
+    }
   }
   makeGates() {
     this.gates = new THREE.Group();

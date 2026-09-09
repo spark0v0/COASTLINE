@@ -1,3 +1,4 @@
+import { installForestAssets } from "./forest-assets.js";
 import { THREE, geometryFromTriangles, rng } from "./kit.js";
 import { installTreeCrowns } from "./tree-crowns.js";
 
@@ -5,6 +6,7 @@ import { installTreeCrowns } from "./tree-crowns.js";
 // No per-tree geometry or textures: the scenery batch retains spatial culling.
 export function buildTrees(S) {
   installTreeCrowns(S);
+  installForestAssets(S);
   const b = S.batch,
     w = S.world,
     trunk = S.art.get("wood", "#827761");
@@ -32,12 +34,12 @@ export function buildTrees(S) {
   palm.computeVertexNormals();
   b.geometries.palmTrunk = palm;
   const p = [];
-  for (let arm = 0; arm < 13; arm++) {
+  for (let arm = 0; arm < 19; arm++) {
     const angle = arm * 2.39996,
       dx = Math.cos(angle),
       dz = Math.sin(angle);
-    const length = 3.0 + (arm % 4) * 0.43,
-      rise = arm < 4 ? 1.7 : 0.8;
+    const length = 3.25 + (arm % 4) * 0.43,
+      rise = arm < 6 ? 1.7 : 0.8;
     const center = (t) => [
       dx * t * length,
       Math.sin(t * Math.PI) * rise - t * t * (arm < 4 ? 0.9 : 2.0),
@@ -86,23 +88,6 @@ export function buildTrees(S) {
       new THREE.IcosahedronGeometry(1, 0),
     ];
   }
-  const branch = (a, c, r1) => {
-    const from = new THREE.Vector3(...a),
-      to = new THREE.Vector3(...c),
-      d = to.clone().sub(from);
-    const q = new THREE.Quaternion().setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      d.clone().normalize(),
-    );
-    const e = new THREE.Euler().setFromQuaternion(q);
-    b.add(
-      "cylinder",
-      trunk,
-      from.add(to).multiplyScalar(0.5).toArray(),
-      [r1, d.length(), r1],
-      [e.x, e.y, e.z],
-    );
-  };
   for (const t of w.trees) {
     const y = w.height(t.x, t.z),
       r = rng(Math.floor(t.seed * 999 + 3000)),
@@ -118,35 +103,23 @@ export function buildTrees(S) {
       );
       continue;
     }
-    const pine = t.kind === "pine",
-      stem = pine ? 0.56 : 0.43;
-    branch(
+    const key =
+      (t.kind === "pine" ? "pine" : "olive") +
+      (Math.floor(t.seed * 19) % 2 === 0 ? 0 : 1);
+    const scale = h / 8;
+    b.add(
+      key + "Wood",
+      trunk,
       [t.x, y, t.z],
-      [t.x + 0.22, y + h * stem, t.z],
-      [0.22, 0.27][pine ? 1 : 0],
+      [scale, scale, scale],
+      [0, t.seed, 0],
     );
-    // Mediterranean stone pine umbrellas, olive crowns with visible branching.
-    const clusters = pine ? 6 : 5,
-      spread = h * (pine ? 0.2 : 0.17);
-    for (let i = 0; i < clusters; i++) {
-      const angle = i * 2.4 + t.seed,
-        dist = spread * (0.45 + r() * 0.6);
-      const xx = t.x + Math.cos(angle) * dist,
-        zz = t.z + Math.sin(angle) * dist;
-      const yy = y + h * (pine ? 0.74 : 0.64) + r() * h * 0.15;
-      branch(
-        [t.x + 0.16, y + h * (stem - 0.07), t.z],
-        [xx, yy - h * 0.035, zz],
-        0.085 + r() * 0.03,
-      );
-      const radius = h * (pine ? 0.205 : 0.155) * (1 + r() * 0.2);
-      b.add(
-        "treeCrown" + (i % 3),
-        S.treeLeafMaterials[(i + (pine ? 0 : 1)) % 4],
-        [xx, yy, zz],
-        [radius * (pine ? 1.25 : 1), radius * (pine ? 0.48 : 0.8), radius],
-        [r() * 0.18, angle, r() * 0.1],
-      );
-    }
+    b.add(
+      key + "Leaves",
+      S.treeLeafMaterials[Math.floor(Math.abs(t.seed) * 11) % 4],
+      [t.x, y, t.z],
+      [scale, scale, scale],
+      [0, t.seed, 0],
+    );
   }
 }

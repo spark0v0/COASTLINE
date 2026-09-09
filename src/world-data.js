@@ -317,7 +317,8 @@ export class WorldData {
     // Broad, gentle landforms bring the coast above the sea. Shared sampling
     // keeps road surface, car suspension and foundations on the same slopes.
     const coastalRelief =
-      hill(164, 126, 37, 61, 13) +
+      hill(138, 163, 32, 32, 7.6) +
+      hill(169, 88, 23, 37, 7) +
       hill(192, 64, 24, 38, 10) +
       hill(96, 143, 33, 21, 3.2);
     let h = 3.1 + mountains + valley + folds + coastalRelief;

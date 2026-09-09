@@ -29,6 +29,8 @@ const types = {
   ".jpg": "image/jpeg",
   ".txt": "text/plain; charset=utf-8",
   ".ico": "image/x-icon",
+  ".glb": "model/gltf-binary",
+  ".hdr": "application/octet-stream",
 };
 const server = http.createServer(async (req, res) => {
   if (!["GET", "HEAD"].includes(req.method)) {

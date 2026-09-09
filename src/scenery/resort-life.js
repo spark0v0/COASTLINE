@@ -1,9 +1,13 @@
 import { THREE } from "./kit.js";
 import { ResortKit } from "./resort-kit.js";
 import { planResortPlaces } from "../resort-places.js";
+import { inScenicCorridor } from "../scenic-route.js";
 
 export function buildResortLife(S) {
-  S.world.places = planResortPlaces(S.world);
+  // Authored courtyards and garden entrances own the scenic road frontage.
+  S.world.places = planResortPlaces(S.world).filter(
+    (site) => !inScenicCorridor(S.world, site.x, site.z),
+  );
   for (const site of S.world.places) {
     const k = new ResortKit(S, site);
     k.deck();

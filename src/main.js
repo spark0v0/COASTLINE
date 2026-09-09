@@ -82,6 +82,19 @@ class Game {
     this.updateMode();
     this.updateHUD();
     this.panel("welcome");
+    this.ready = this.view.ready.then(() => {
+      $("loading-screen").hidden = true;
+      const warnings = [
+        this.view.vehicle.assetError,
+        this.view.environmentError,
+      ].filter(Boolean);
+      if (warnings.length) {
+        $("asset-note").hidden = false;
+        $("asset-note").textContent =
+          warnings.join("；") +
+          "。可继续驾驶，检查资源目录后刷新可恢复完整效果。";
+      }
+    });
     this.render(0.1);
     this.schedule();
   }
@@ -148,7 +161,7 @@ class Game {
     this.scriptedDriver = null;
     this.updateMode();
     this.panel("play");
-    this.toast("自由驾驶 · 前方是晴湾海岸，沿路可前往城市和山道");
+    this.toast("自由驾驶 · 迷你地图金线为晴湾花园路，沿路驶向海湾");
   }
   startRace() {
     this.race.points = this.selectedEvent.points;
@@ -328,8 +341,18 @@ class Game {
       }
     };
     $("fullscreen-button").onclick = toggleFullscreen;
-    $("play-button").onclick = () =>
-      this.mode === "help" ? this.panel("pause") : this.freeDrive();
+    $("play-button").onclick = () => {
+      if (this.mode === "help") {
+        this.panel("pause");
+        return;
+      }
+      if (this.mode === "welcome") {
+        this.car.reset(this.world.scenicRoute.start);
+        this.snap = true;
+        this.effects.reset();
+      }
+      this.freeDrive();
+    };
     $("welcome-race").onclick = () => this.chooseEvent();
     $("race-button").onclick = () => this.chooseEvent();
     $("event-close").onclick = () =>
@@ -868,6 +891,7 @@ class Game {
     this.schedule();
   }
   fatal(message) {
+    $("loading-screen").hidden = true;
     this.failed = true;
     this.cancelSchedule();
     this.audio.suspend();
@@ -885,6 +909,7 @@ try {
   }
 } catch (error) {
   console.error(error);
+  $("loading-screen").hidden = true;
   $("fatal").hidden = false;
   $("fatal-message").textContent = error.stack || error.message;
 }

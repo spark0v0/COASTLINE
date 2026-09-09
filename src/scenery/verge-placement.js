@@ -1,10 +1,16 @@
 import { lakeDistance } from "../lake-data.js";
-import { seaViewWindow } from "../scenic-route.js";
+import { seaViewWindow, inScenicCorridor } from "../scenic-route.js";
 
 // Rectangle-aware placement avoids the large empty exclusion circles that
 // previously rejected narrow gaps between buildings, fences and tree trunks.
 export function placeOnVerge(world, site, ignore = null) {
   if (world.scenicRoute && seaViewWindow(site.x, site.z)) return null;
+  if (
+    world.scenicRoute &&
+    !site.authored &&
+    inScenicCorridor(world, site.x, site.z)
+  )
+    return null;
   const c = Math.cos(site.yaw),
     s = Math.sin(site.yaw),
     heights = [];

@@ -30,13 +30,17 @@ export function buildTerrain(S) {
           );
           const nearest = roads ? w.nearestRoad(x, z) : null;
           const depression =
-            nearest && nearest.d < nearest.width / 2 + 3 ? 0.19 : 0;
+            nearest && nearest.d < nearest.width / 2 + 3 ? 0.055 : 0;
           positions.push(x, h - depression, z);
           normals.push(normal.x, normal.y, normal.z);
           uv.push(x * 0.1, z * 0.1);
           verges.push(
             nearest
-              ? smooth(nearest.width / 2 + 1, nearest.width / 2 + 9, nearest.d)
+              ? smooth(
+                  nearest.width / 2 + 0.6,
+                  nearest.width / 2 + 3.2,
+                  nearest.d,
+                )
               : 1,
           );
         }

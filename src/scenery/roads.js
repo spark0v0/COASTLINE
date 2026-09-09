@@ -57,8 +57,14 @@ export function buildRoads(S) {
           mz = (a.z + b.z) / 2;
         if (urban(mx, mz) && !(mx > 465 && mz > 200 && mz < 640)) {
           for (const side of [-1, 1]) {
-            ribbon(surfaces[1], side * (path.width / 2 + 1.2), 2.4, 0.175);
-            ribbon(surfaces[4], side * (path.width / 2 + 0.14), 0.25, 0.18);
+            const sidewalk = path.name === "晴湾花园街道" ? 1.65 : 2.4;
+            ribbon(
+              surfaces[1],
+              side * (path.width / 2 + sidewalk / 2),
+              sidewalk,
+              0.175,
+            );
+            ribbon(surfaces[4], side * (path.width / 2 + 0.1), 0.18, 0.18);
             const edgePoint = (p, n, y) => {
               const x = p.x + n.x * side * (path.width / 2 + 0.015),
                 z = p.z + n.z * side * (path.width / 2 + 0.015);

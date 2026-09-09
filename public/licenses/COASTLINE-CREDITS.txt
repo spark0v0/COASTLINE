@@ -1,0 +1,34 @@
+COASTLINE / 海风疾驰 — 资源署名
+
+主车：Car Concept（修改版）
+Copyright 2024 Darmstadt Graphics Group GmbH; Eric Chadwick.
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+Source: https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept
+Underlying public-domain model by Unity Fan; the distributed derivative is CC BY 4.0.
+
+COASTLINE modifications: removed hidden interior, engine and axle meshes;
+removed material variants and unused data; removed logo textures from the tire
+sidewall and license plate; revised paint and glass; neutralized front steering
+pose; adapted independent steering, wheel rotation, stationary calipers and
+brake lights to the game's vehicle controller. No endorsement is implied.
+Asset: assets/vehicles/coast-gt.glb
+Full license: CAR-CC-BY-4.0.txt; source attribution: CAR-CONCEPT-SOURCE.md.
+This credit and the CC BY 4.0 notice must accompany redistributed copies.
+
+日光环境：Kloofendal 48d Partly Cloudy — Greg Zaal / Poly Haven
+https://polyhaven.com/a/kloofendal_48d_partly_cloudy
+CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/
+Original 1K HDR; used as filtered environmental lighting and reflections.
+Asset: assets/environment/coast-daylight.hdr
+
+地表贴图：Poly Haven — CC0 1.0
+asphalt_02, aerial_rocks_02, clay_plaster, aerial_grass_rock, aerial_beach_01.
+https://polyhaven.com/license
+Sources and file mapping: repository ASSET-LICENSES.md.
+
+Three.js — MIT; license: THREE-LICENSE.txt.
+Vite build tooling — MIT; notices: VITE-LICENSE.md.
+
+住宅、树木、景观、地图、界面与合成音效由 COASTLINE 项目代码制作。
+第三方资源的许可不替代项目其余代码的许可。无需运行时连接素材网站。

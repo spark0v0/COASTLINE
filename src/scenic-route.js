@@ -20,6 +20,10 @@ export function tourFrame(w, x) {
 export function seaViewWindow(x, z) {
   return x > 470 && x < 740 && z > 220 && z < 620;
 }
+export function inScenicCorridor(w, x, z) {
+  if (seaViewWindow(x, z)) return true;
+  return x > 35 && x < 470 && Math.abs(z - tourFrame(w, x).z) < 55;
+}
 export function prepareScenicRoute(w) {
   const street = w.paths.find((p) => p.name === "晴湾花园街道");
   const coast = w.route
@@ -54,14 +58,18 @@ export function prepareScenicRoute(w) {
   });
   // An asymmetric sequence of addresses, not two matching rows of parcels.
   const plots = [
-    [82, -1, 14, 12, 0],
-    [114, 1, 12, 11, 2],
-    [155, -1, 16, 11, 1],
-    [247, 1, 15, 12, 0],
+    [75, -1, 14, 12, 1],
+    [104, 1, 12, 11, 2],
+    [135, -1, 16, 11, 0],
+    [164, 1, 13, 10, 1],
+    [239, -1, 15, 12, 0],
+    [258, 1, 13, 11, 2],
     [284, -1, 12, 10, 2],
-    [326, 1, 17, 12, 1],
-    [368, -1, 14, 11, 0],
-    [411, 1, 13, 10, 2],
+    [311, 1, 17, 12, 1],
+    [340, -1, 14, 11, 0],
+    [373, 1, 13, 10, 2],
+    [409, -1, 15, 12, 1],
+    [442, 1, 14, 10, 0],
   ];
   for (const [x, side, width, depth, style] of plots) {
     const p = tourFrame(w, x),

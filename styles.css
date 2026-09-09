@@ -1170,3 +1170,88 @@ body.in-menu .offline {
     #112c342b
   );
 }
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at 70% 20%, #345d61, #102e37 70%);
+  color: #eeede0;
+}
+#loading-screen > span {
+  font-size: 12px;
+  letter-spacing: 8px;
+  color: #cdd9c9;
+}
+#loading-screen h1 {
+  font-size: 32px;
+  font-weight: 400;
+  margin: 28px 0 4px;
+}
+#loading-screen p {
+  font-size: 13px;
+  color: #b9cfca;
+}
+#loading-screen small {
+  font-size: 11px;
+  color: #a6bfba;
+  margin-top: 24px;
+}
+#loading-screen > i {
+  width: 130px;
+  height: 2px;
+  margin-top: 24px;
+  background: linear-gradient(90deg, transparent, #d8e6b6, transparent);
+  animation: load-breathe 1.8s ease-in-out infinite;
+}
+@keyframes load-breathe {
+  50% {
+    opacity: 0.25;
+    transform: scaleX(0.55);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #loading-screen > i {
+    animation: none;
+  }
+}
+.credits-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: #bacdc7;
+  font-size: 11px;
+  text-decoration-color: #bacdc755;
+  text-underline-offset: 4px;
+}
+@media (min-width: 1000px) {
+  .drive-card {
+    width: 208px;
+    padding: 13px 15px;
+  }
+  .drive-card h2 {
+    font-size: 21px;
+    margin: 9px 0 6px;
+  }
+  .map-card {
+    width: 206px;
+  }
+  #minimap {
+    height: 146px;
+  }
+  .speed-card {
+    width: 212px;
+  }
+  .speed-main > strong {
+    font-size: 67px;
+  }
+  .map-bottom {
+    gap: 5px;
+    font-size: 9px;
+  }
+  #distance-travelled {
+    display: none;
+  }
+}

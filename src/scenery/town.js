@@ -1,11 +1,14 @@
 import { THREE, rng } from "./kit.js";
 import { buildModernArchitecture } from "./architecture.js";
+import { finalizeResidences } from "./villa-models.js";
+import { inScenicCorridor } from "../scenic-route.js";
 import { sportBodyGeometry, sportCanopyGeometry } from "../vehicle-geometry.js";
 
 // The building kit shared by the old town and the coastal strip, plus the
 // street furniture that gives the town its life.
 export function buildTown(S) {
   buildModernArchitecture(S);
+  finalizeResidences(S);
   buildStreetLife(S);
 }
 
@@ -29,6 +32,7 @@ function buildStreetLife(S) {
     for (let i = 6; i < pts.length - 6; i += 12) {
       const p = pts[i],
         q = pts[i + 1];
+      if (inScenicCorridor(w, p.x, p.z)) continue;
       const dx = q.x - p.x,
         dz = q.z - p.z,
         len = Math.hypot(dx, dz) || 1;

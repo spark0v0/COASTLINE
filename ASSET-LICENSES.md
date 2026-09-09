@@ -1,5 +1,25 @@
 # 资源与依赖记录
 
+## 当前试玩候选版：2026-09-09 主车与日光资源
+
+当前主车使用第三方模型，日光反射使用第三方 HDR。下方早期“没有下载模型/贴图”的文字为历史记录，不描述本版本的完整资源状态。
+
+| 本地资源 | 作者与来源 | 许可证 | 修改方式 |
+| --- | --- | --- | --- |
+| public/assets/vehicles/coast-gt.glb | Car Concept，© 2024 Darmstadt Graphics Group GmbH；模型与贴图 Eric Chadwick。[源项目](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept) | CC BY 4.0；原始底模来自 Unity Fan 的 CC0 模型，但本次分发的衍生资源按 CC BY 4.0 署名 | 移除隐藏内饰、发动机/车轴、未使用变体；裁剪无引用数据；移除牌照/胎侧标志贴图；调整银蓝车漆、简化深色玻璃；前轮姿态归正，接入游戏转向/车轮/卡钳/灯光动画 |
+| public/assets/environment/coast-daylight.hdr | [Kloofendal 48d Partly Cloudy](https://polyhaven.com/a/kloofendal_48d_partly_cloudy)，Greg Zaal / Poly Haven | CC0 1.0 | 1K HDR 原样随项目提供；运行时 PMREM 预过滤用于环境光与反射 |
+
+车辆文件约 9.42 MB，HDR 约 1.64 MB。没有新增依赖、系统安装或运行时素材外链。
+
+主车原始下载 SHA-256：c272098089d78c5cd9fd9f24ff50ee8acf8d932c55f2d55fc10adb6c8998966b。
+制作脚本：scripts/prepare-car.mjs；用原始 GLB 作为输入可重新生成修改版。模型内保留原作者信息与处理声明。完整 CC BY 4.0 许可位于 public/licenses/CAR-CC-BY-4.0.txt，原来源说明位于 CAR-CONCEPT-SOURCE.md。
+
+公开分享必须保留 public/licenses/COASTLINE-CREDITS.txt（构建后在 dist/licenses），其中包含作者、来源、许可链接和修改说明；游戏主菜单提供署名入口。移除来源标志不表示模型变为无署名资源，也不表示原作者背书本游戏。
+
+本轮住宅、树木、龙舌兰、庭院布局和共享几何由项目代码制作；沿用现有 CC0 表面材质。没有新增外部声音素材。第三方资源许可不会自动为项目全部代码授予同一许可。
+
+## 历史记录
+
 ## 2026-09-09 晴湾曲线路线与跑车曲面
 
 本轮新增的连续跑车座舱、车身改型、坡屋顶、沿岸岩体布局、外海石灰岩小岛与观景支路均为项目内原创代码构造，未引入第三方车型、模型、声音、贴图或依赖。材质继续使用下列已有本地 CC0 表面资源，曲面与实例化依赖既有 Three.js MIT 组件。没有运行时外部资源请求。实际交付与限制见 `docs/COASTAL-DRIVE.md`。

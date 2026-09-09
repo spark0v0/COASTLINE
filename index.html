@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#122c31" />
     <meta
       name="description"
-      content="海风疾驰：无需安装、无需联网的轻量 3D 开放世界赛车游戏。"
+      content="海风疾驰：驾驶概念跑车，探索晴湾花园路与海岛公路的单人 3D 驾驶试玩版。"
     />
     <title>海风疾驰 · COASTLINE</title>
     <link
@@ -17,6 +17,13 @@
     <script type="module" src="/src/main.js"></script>
   </head>
   <body>
+    <div id="loading-screen" role="status" aria-live="polite">
+      <span>COASTLINE</span>
+      <h1>海风正在路上</h1>
+      <p>正在准备海岛、车辆与日光</p>
+      <i></i>
+      <small>首次加载包含约 11 MB 的车辆与日光资源</small>
+    </div>
     <canvas id="game" aria-label="海风疾驰 3D 驾驶场景"></canvas>
     <div id="vignette" aria-hidden="true"></div>
     <div id="boost-lines" aria-hidden="true"></div>
@@ -141,6 +148,14 @@
           入弯前减速，短按空格甩尾，出弯再加氮气。<br />APEX S1 · 晴湾群岛 ·
           点击出发后开启音效 · F 全屏
         </p>
+        <p id="asset-note" class="footnote" hidden></p>
+        <a
+          class="credits-link"
+          href="licenses/COASTLINE-CREDITS.txt"
+          target="_blank"
+          rel="noopener"
+          >制作与资源署名 ↗</a
+        >
       </section>
       <section
         id="event-panel"
