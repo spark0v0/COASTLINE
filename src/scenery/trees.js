@@ -5,8 +5,8 @@ import { installTreeCrowns } from "./tree-crowns.js";
 // Shared irregular crowns and a continuous, tapered palm trunk.
 // No per-tree geometry or textures: the scenery batch retains spatial culling.
 export function buildTrees(S) {
-  installTreeCrowns(S);
   installForestAssets(S);
+  installTreeCrowns(S);
   const b = S.batch,
     w = S.world,
     trunk = S.art.get("wood", "#827761");
@@ -105,7 +105,7 @@ export function buildTrees(S) {
     }
     const key =
       (t.kind === "pine" ? "pine" : "olive") +
-      (Math.floor(t.seed * 19) % 2 === 0 ? 0 : 1);
+      (Math.floor(Math.abs(t.seed) * 19) % 3);
     const scale = h / 8;
     b.add(
       key + "Wood",
@@ -116,7 +116,7 @@ export function buildTrees(S) {
     );
     b.add(
       key + "Leaves",
-      S.treeLeafMaterials[Math.floor(Math.abs(t.seed) * 11) % 4],
+      S.forestMaterials[t.kind === "pine" ? "pine" : "olive"],
       [t.x, y, t.z],
       [scale, scale, scale],
       [0, t.seed, 0],

@@ -37,12 +37,12 @@ export function buildVilla(S, h) {
       ["#ebe6da", "#e6e4dc", "#e3ddce"][style],
       0.88,
     ),
-    stone = S.art.get("stone", "#c6bfae", 0.94),
+    stone = S.art.get("ashlar", "#ddd4bd", 0.87),
     wood = S.art.get("wood", "#8d7257", 0.79),
     metal = "#33434a";
   S.residenceGlass ||= new THREE.MeshPhysicalMaterial({
-    color: "#283f49",
-    roughness: 0.17,
+    color: "#526469",
+    roughness: 0.22,
     metalness: 0.24,
     clearcoat: 1,
     envMapIntensity: 0.85,
@@ -89,8 +89,81 @@ export function buildVilla(S, h) {
     }
     box(stone, x, base + 0.16, z, ww, 0.15, dd);
     box(mat, x, base + 0.31, z - dd / 2 + 0.14, ww, hh - 0.31, 0.28);
-    for (const side of [-1, 1])
-      box(mat, x + side * (ww / 2 - 0.14), base + 0.31, z, 0.28, hh - 0.31, dd);
+    // Side elevations have real openings and deep reveals, not glass stickers.
+    for (const side of [-1, 1]) {
+      const sx = x + side * (ww / 2 - 0.14),
+        cells = Math.max(1, Math.floor(dd / 3.1)),
+        span = dd / cells;
+      const sill = base + 0.97,
+        head = base + Math.min(hh - 0.48, 2.43);
+      box(mat, sx, base + 0.31, z, 0.28, sill - base - 0.31, dd);
+      box(mat, sx, head, z, 0.28, base + hh - head, dd);
+      for (let j = 0; j < cells; j++) {
+        const zz = z - dd / 2 + span * (j + 0.5),
+          window = Math.min(1.45, span - 0.7),
+          pier = (span - window) / 2;
+        for (const edge of [-1, 1])
+          box(
+            mat,
+            sx,
+            sill,
+            zz + (edge * (window + pier)) / 2,
+            0.28,
+            head - sill,
+            pier,
+          );
+        box(
+          S.residenceGlass,
+          sx - side * 0.09,
+          sill,
+          zz,
+          0.035,
+          head - sill,
+          window,
+        );
+        for (const edge of [-1, 1])
+          box(
+            metal,
+            sx - side * 0.06,
+            sill,
+            zz + (edge * window) / 2,
+            0.05,
+            head - sill,
+            0.035,
+          );
+        box(
+          stone,
+          sx + side * 0.08,
+          sill - 0.09,
+          zz,
+          0.44,
+          0.09,
+          window + 0.18,
+        );
+        // A single warm shutter panel establishes a different side silhouette.
+        if (j === 0 && style !== 2) {
+          box(
+            wood,
+            sx + side * 0.18,
+            sill,
+            zz + window * 0.78,
+            0.065,
+            head - sill,
+            window * 0.45,
+          );
+          for (let slat = 0; slat < 4; slat++)
+            box(
+              metal,
+              sx + side * 0.217,
+              sill + 0.12 + (slat * (head - sill - 0.2)) / 4,
+              zz + window * 0.78,
+              0.012,
+              0.014,
+              window * 0.4,
+            );
+        }
+      }
+    }
     // Glazing sits in a real opening between the sill, lintel and jambs.
     box(mat, x, base + 0.31, f - 0.14, ww, 0.48, 0.28);
     box(mat, x, base + hh - 0.43, f - 0.14, ww, 0.43, 0.28);
@@ -158,6 +231,18 @@ export function buildVilla(S, h) {
     doorX = W * 0.09;
     doorZ = D * 0.375;
     top = 6.75;
+    // The balcony railing now sits on an actual supported terrace.
+    box(stone, -W * 0.19, 3.5, D * 0.32, W * 0.56, 0.15, D * 0.17);
+    for (const edge of [-1, 1])
+      box(
+        metal,
+        -W * 0.19 + edge * W * 0.28,
+        4.58,
+        D * 0.32,
+        0.035,
+        0.035,
+        D * 0.15,
+      );
     for (const xx of [-W * 0.37, W * 0.05])
       box(metal, xx, 3.58, D * 0.383, 0.045, 1, 0.045);
     box(metal, -W * 0.16, 4.58, D * 0.383, W * 0.43, 0.035, 0.05);

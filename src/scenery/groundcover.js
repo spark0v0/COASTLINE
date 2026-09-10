@@ -9,16 +9,16 @@ export function buildGroundCover(S) {
     r = rng(88131),
     p = [],
     colors = [];
-  for (let i = 0; i < 17; i++) {
+  for (let i = 0; i < 25; i++) {
     const angle = i * 2.39996,
       radius = 0.85 * Math.sqrt(r());
     const x = Math.cos(angle) * radius,
       z = Math.sin(angle) * radius,
-      h = 0.18 + r() * 0.42;
-    const bend = 0.1 + r() * 0.19,
+      h = 0.075 + r() * 0.135;
+    const bend = 0.07 + r() * 0.1,
       dx = Math.cos(angle),
       dz = Math.sin(angle),
-      width = 0.018 + r() * 0.025;
+      width = 0.009 + r() * 0.009;
     const blade = [
       x - dz * width,
       0,
@@ -41,11 +41,20 @@ export function buildGroundCover(S) {
     ];
     p.push(...blade);
     for (let j = 0; j < 6; j++) {
-      const c = new THREE.Color(j % 3 === 2 ? "#899256" : "#415d32");
+      const c = new THREE.Color(j % 3 === 2 ? "#84945e" : "#5e7749");
       colors.push(c.r, c.g, c.b);
     }
   }
   b.geometries.meadow = geometryFromTriangles(p, colors);
+  const grassNormals = b.geometries.meadow.attributes.normal;
+  for (let i = 0; i < grassNormals.count; i++) {
+    const v = new THREE.Vector3(
+      grassNormals.getX(i) * 0.28,
+      0.94,
+      grassNormals.getZ(i) * 0.28,
+    ).normalize();
+    grassNormals.setXYZ(i, v.x, v.y, v.z);
+  }
   b.lodGeometries.meadow = [new THREE.BufferGeometry()];
   const grass = new THREE.MeshStandardMaterial({
     color: "#ffffff",

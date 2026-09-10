@@ -45,9 +45,10 @@ export function groundPath(
 }
 export function groundBed(S, site, x, z, rx, rz, phase = 0) {
   const out = [],
+    alpha = [],
     c = Math.cos(site.yaw),
     s = Math.sin(site.yaw),
-    rings = Math.ceil(Math.max(rx, rz) / 1.2),
+    rings = Math.max(3, Math.ceil(Math.max(rx, rz) / 1.2)),
     steps = 32;
   const v = (t, r) => {
     const a = t * Math.PI * 2,
@@ -59,7 +60,7 @@ export function groundBed(S, site, x, z, rx, rz, phase = 0) {
     return [xx, S.world.height(xx, zz) + 0.025, zz];
   };
   for (let r = 0; r < rings; r++)
-    for (let i = 0; i < steps; i++)
+    for (let i = 0; i < steps; i++) {
       quad(
         out,
         v(i / steps, r / rings),
@@ -67,35 +68,57 @@ export function groundBed(S, site, x, z, rx, rz, phase = 0) {
         v((i + 1) / steps, (r + 1) / rings),
         v(i / steps, (r + 1) / rings),
       );
-  accumulate(S, site, "sand", "#9f967d", out);
+      const fade = (t) =>
+        Math.min(1, Math.max(0, ((1 - t) * Math.max(rx, rz)) / 1.2));
+      const a = fade(r / rings),
+        b = fade((r + 1) / rings);
+      alpha.push(a, a, b, a, b, b);
+    }
+  accumulate(S, site, "sand", "#b0a48a", out, alpha);
 }
-function accumulate(S, site, kind, color, out) {
+function accumulate(S, site, kind, color, out, alpha = null) {
   S.groundPatches ||= new Map();
   const key =
     kind +
     color +
+    (alpha ? ":feather" : "") +
     ":" +
     Math.floor(site.x / 180) +
     ":" +
     Math.floor(site.z / 180);
   if (!S.groundPatches.has(key))
-    S.groundPatches.set(key, { kind, color, positions: [] });
+    S.groundPatches.set(key, {
+      kind,
+      color,
+      positions: [],
+      alpha: alpha ? [] : null,
+    });
   const dst = S.groundPatches.get(key).positions;
   for (const v of out) dst.push(v);
+  if (alpha) for (const a of alpha) S.groundPatches.get(key).alpha.push(a);
 }
 export function finishGroundPatches(S) {
-  for (const { kind, color, positions } of S.groundPatches?.values() || []) {
-    const mat = S.art.get(kind, color);
+  for (const { kind, color, positions, alpha } of S.groundPatches?.values() ||
+    []) {
+    const source = S.art.get(kind, color),
+      mat = alpha ? source.clone() : source;
+    const geometry = geometryFromTriangles(positions);
+    if (alpha) {
+      mat.onBeforeCompile = source.onBeforeCompile;
+      mat.customProgramCacheKey = source.customProgramCacheKey;
+      mat.transparent = true;
+      mat.depthWrite = false;
+      mat.vertexColors = true;
+      geometry.setAttribute(
+        "color",
+        new THREE.Float32BufferAttribute(
+          alpha.flatMap((a) => [1, 1, 1, a]),
+          4,
+        ),
+      );
+    }
     mat.side = THREE.DoubleSide;
-    mesh(
-      geometryFromTriangles(positions),
-      mat,
-      S.group,
-      [0, 0, 0],
-      [0, 0, 0],
-      [1, 1, 1],
-      false,
-    );
+    mesh(geometry, mat, S.group, [0, 0, 0], [0, 0, 0], [1, 1, 1], false);
   }
   S.groundPatches?.clear();
 }

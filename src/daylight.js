@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 // One sun direction drives direct lighting, the sky, water and reflected highlights.
-export const SUN_DIRECTION = new THREE.Vector3(-0.48, 0.84, -0.24).normalize();
+export const SUN_DIRECTION = new THREE.Vector3(-0.58, 0.72, -0.37).normalize();
 export const DAYLIGHT = {
   skyTop: "#3987bb",
   horizon: "#b6d5df",

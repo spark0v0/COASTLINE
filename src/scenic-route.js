@@ -39,11 +39,14 @@ export function prepareScenicRoute(w) {
     ...spur.points,
   ];
   let length = 0;
-  for (let i = 1; i < points.length; i++)
+  const stations = [0];
+  for (let i = 1; i < points.length; i++) {
     length += Math.hypot(
       points[i].x - points[i - 1].x,
       points[i].z - points[i - 1].z,
     );
+    stations.push(length);
+  }
   const removed = new Set();
   w.buildings = w.buildings.filter((h) => {
     const frame = tourFrame(w, h.x);
@@ -101,6 +104,7 @@ export function prepareScenicRoute(w) {
   const removedTrees = new Set();
   w.trees = w.trees.filter((t) => {
     const open =
+      (t.x > 35 && t.x < 470 && Math.abs(t.z - tourFrame(w, t.x).z) < 65) ||
       (seaViewWindow(t.x, t.z) && (t.x > 654 || t.z > 514)) ||
       w.buildings.some(
         (h) => Math.hypot(h.x - t.x, h.z - t.z) < Math.hypot(h.w, h.d) / 2 + 3,
@@ -120,32 +124,47 @@ export function prepareScenicRoute(w) {
   w.grid.clear();
   for (const o of kept) w.register(o);
   for (const h of w.buildings) if (!kept.includes(h)) w.register(h);
-  // Broad canopy over a few corners, then a deliberate break before the bay.
-  for (const [x, side] of [
-    [57, 1],
-    [146, 1],
-    [260, -1],
-    [308, -1],
-    [395, 1],
-    [451, -1],
+  // Unequal groves behind gardens create enclosure; the last grove is inland,
+  // leaving the bay-facing side open. Trunk positions remain real colliders.
+  for (const [x, side, offset] of [
+    [60, 1, 23],
+    [187, -1, 23],
+    [215, 1, 30],
+    [296, -1, 27],
+    [365, 1, 26],
+    [445, -1, 30],
+    [526, -1, 29],
   ]) {
-    const p = tourFrame(w, x),
-      tx = p.x + p.nx * 12 * side,
-      tz = p.z + p.nz * 12 * side;
-    if (
-      w.nearestRoad(tx, tz).d < 8 ||
-      w.buildings.some(
-        (h) => Math.hypot(tx - h.x, tz - h.z) < Math.hypot(h.w, h.d) / 2 + 3,
+    for (let i = 0; i < 5; i++) {
+      const f = tourFrame(w, x + (i - 2) * 4.1 + Math.sin(x + i * 9) * 2);
+      const off = offset + (i % 2) * 7 + Math.cos(i * 3 + x) * 3;
+      const tx = f.x + f.nx * off * side,
+        tz = f.z + f.nz * off * side;
+      const road = w.nearestRoad(tx, tz);
+      if (
+        road.d < road.width / 2 + 5 ||
+        w.buildings.some(
+          (h) =>
+            Math.hypot(tx - h.x, tz - h.z) < Math.hypot(h.w, h.d) / 2 + 3.5,
+        )
       )
-    )
-      continue;
-    w.trees.push({ x: tx, z: tz, kind: "pine", h: 9.5, seed: x * 0.073 });
-    w.register({ type: "circle", x: tx, z: tz, r: 0.35 });
+        continue;
+      if (w.trees.some((t) => Math.hypot(tx - t.x, tz - t.z) < 3)) continue;
+      w.trees.push({
+        x: tx,
+        z: tz,
+        kind: i % 3 === 0 ? "olive" : "pine",
+        h: i % 3 === 0 ? 7.2 : 9 + (i % 2) * 1.4,
+        seed: x * 0.083 + i * 2.71,
+      });
+      w.register({ type: "circle", x: tx, z: tz, r: 0.35 });
+    }
   }
   w.scenicRoute = {
     name: "晴湾花园路",
     points,
     length,
+    stations,
     start: { ...points[0], yaw: first.angle + Math.PI / 2 },
     removedBuildings: removed.size,
     removedTrees: removedTrees.size,

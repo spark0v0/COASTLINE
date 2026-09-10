@@ -14,18 +14,18 @@ export function landscapeMaterial(art) {
     shader.uniforms.landGrass = { value: art.texture("grass") };
     shader.vertexShader = shader.vertexShader.replace(
       "#include <common>",
-      "#include <common>\nattribute float verge; varying float vVerge; varying vec3 vLand; varying vec3 vSlope;",
+      "#include <common>\nattribute float verge; attribute float lawn; varying float vLawn; varying float vVerge; varying vec3 vLand; varying vec3 vSlope;",
     );
     shader.vertexShader = shader.vertexShader.replace(
       "#include <begin_vertex>",
-      "#include <begin_vertex>\nvLand=(modelMatrix*vec4(transformed,1.)).xyz; vSlope=normalize(mat3(modelMatrix)*normal); vVerge=verge;",
+      "#include <begin_vertex>\nvLand=(modelMatrix*vec4(transformed,1.)).xyz; vSlope=normalize(mat3(modelMatrix)*normal); vVerge=verge; vLawn=lawn;",
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <common>",
       `
       #include <common>
       uniform sampler2D landRock; uniform sampler2D landSand; uniform sampler2D landGrass;
-      varying float vVerge; varying vec3 vLand; varying vec3 vSlope;
+      varying float vVerge; varying float vLawn; varying vec3 vLand; varying vec3 vSlope;
       float landHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float landNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
         return mix(mix(landHash(i),landHash(i+vec2(1.,0.)),f.x),
@@ -39,14 +39,17 @@ export function landscapeMaterial(art) {
       float large=landNoise(p*.016)*.65+landNoise(p*.043+17.)*.35;
       float fine=landNoise(p*2.3)*.6+landNoise(p*7.1)*.4;
       // Linear-light palette: sage green, sunlit meadow, warm dry-earth pockets.
-      vec3 grass=mix(vec3(.045,.095,.038),vec3(.135,.20,.065),large);
+      vec3 grass=mix(vec3(.033,.073,.024),vec3(.091,.144,.049),large);
       float grassGrain=texture2D(landGrass,p*.35).r*.62+
         texture2D(landGrass,mat2(.8,-.6,.6,.8)*p*1.7).r*.38;
       grass*=.81+fine*.12+grassGrain*.34;
-      float dry=smoothstep(.57,.79,landNoise(p*.067+landNoise(p*.021)*3.));
+      float dry=smoothstep(.56,.79,landNoise(p*.038+landNoise(p*.013)*3.))*(1.-vLawn);
       vec3 soil=mix(vec3(.23,.205,.145),vec3(.31,.275,.195),large);
-      grass=mix(grass,soil,dry*.34);
-      grass=mix(soil,grass,smoothstep(.1,.9,vVerge));
+      grass=mix(grass,soil,dry*.43);
+      vec3 turf=mix(vec3(.051,.105,.033),vec3(.069,.133,.045),large)*(.94+grassGrain*.13);
+      grass=mix(grass,turf,vLawn*.88);
+      float edge=smoothstep(.12,.87,vVerge+(landNoise(p*.49)-.5)*.12);
+      grass=mix(soil,grass,edge);
       float rock=smoothstep(.2,.61,1.-normalize(vSlope).y);
       vec3 weights=pow(abs(normalize(vSlope)),vec3(4.));weights/=dot(weights,vec3(1.));
       vec3 r=texture2D(landRock,vLand.zy*.14).rgb*weights.x+
@@ -64,6 +67,6 @@ export function landscapeMaterial(art) {
     );
     addSurfaceRelief(shader, "terrainGrain", 0.014);
   };
-  material.customProgramCacheKey = () => "landscape-layers-v2";
+  material.customProgramCacheKey = () => "landscape-lawn-v3";
   return material;
 }

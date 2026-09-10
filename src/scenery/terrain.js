@@ -9,11 +9,15 @@ export function buildTerrain(S) {
     chunk = 192,
     bounds = w.bounds;
   const ground = landscapeMaterial(S.art);
+  const lawns = w.buildings
+    .filter((h) => h.scenicStyle !== undefined)
+    .map((h) => ({ ...h, c: Math.cos(h.yaw), s: Math.sin(h.yaw) }));
   for (let cx = bounds.minX; cx < bounds.maxX; cx += chunk)
     for (let cz = bounds.minZ; cz < bounds.maxZ; cz += chunk) {
       const positions = [],
         normals = [],
         verges = [],
+        turf = [],
         uv = [],
         indices = [],
         n = chunk / step;
@@ -34,6 +38,18 @@ export function buildTerrain(S) {
           positions.push(x, h - depression, z);
           normals.push(normal.x, normal.y, normal.z);
           uv.push(x * 0.1, z * 0.1);
+          let managed = 0;
+          for (const h of lawns) {
+            const dx = x - h.x,
+              dz = z - h.z;
+            if (Math.abs(dx) > h.w + 25 || Math.abs(dz) > h.d + 25) continue;
+            const edge = Math.hypot(
+              Math.max(0, Math.abs(dx * h.c + dz * h.s) - h.w / 2),
+              Math.max(0, Math.abs(-dx * h.s + dz * h.c) - h.d / 2),
+            );
+            managed = Math.max(managed, 1 - smooth(3, 17, edge));
+          }
+          turf.push(managed);
           verges.push(
             nearest
               ? smooth(
@@ -61,6 +77,7 @@ export function buildTerrain(S) {
       );
       g.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
       g.setAttribute("verge", new THREE.Float32BufferAttribute(verges, 1));
+      g.setAttribute("lawn", new THREE.Float32BufferAttribute(turf, 1));
       g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
       g.setIndex(indices);
       mesh(g, ground, S.group, [0, 0, 0], [0, 0, 0], [1, 1, 1], false);

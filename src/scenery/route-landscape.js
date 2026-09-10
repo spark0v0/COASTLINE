@@ -108,7 +108,7 @@ export function buildRouteLandscape(S) {
       return Math.hypot(x - p.a.x - dx * t, z - p.a.z - dz * t) < 2.1;
     });
   const grass = new THREE.MeshStandardMaterial({
-    color: "#d4dcc0",
+    color: "#ffffff",
     roughness: 1,
     vertexColors: true,
     side: THREE.DoubleSide,
@@ -129,7 +129,7 @@ export function buildRouteLandscape(S) {
   for (let x = 42; x < 593; x += 3.6) {
     const f = tourFrame(w, x);
     for (const side of [-1, 1])
-      for (let j = 0; j < 9; j++) {
+      for (let j = 0; j < 4; j++) {
         const off = 7.1 + random() * 10.5,
           xx = f.x + f.nx * off * side + (random() - 0.5) * 4,
           zz = f.z + f.nz * off * side + (random() - 0.5) * 3;

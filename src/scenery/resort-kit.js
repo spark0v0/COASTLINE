@@ -12,7 +12,7 @@ export class ResortKit {
     this.s = Math.sin(site.yaw);
     this.white = S.art.get("stucco", "#e7e3d7");
     this.wood = S.art.get("wood", "#ac8964", 0.8);
-    this.stone = S.art.get("limestone", "#c7c4b5");
+    this.stone = S.art.get("ashlar", "#d5cbb7", 0.9);
     this.metal = "#344b51";
     this.b.geometries.propPole ||= new THREE.CylinderGeometry(1, 1, 1, 10);
     this.b.geometries.propRing ||= new THREE.TorusGeometry(1, 0.065, 6, 24);

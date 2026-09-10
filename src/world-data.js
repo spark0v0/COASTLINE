@@ -317,11 +317,16 @@ export class WorldData {
     // Broad, gentle landforms bring the coast above the sea. Shared sampling
     // keeps road surface, car suspension and foundations on the same slopes.
     const coastalRelief =
-      hill(138, 163, 32, 32, 7.6) +
+      hill(87, 191, 44, 29, 9.4) +
       hill(169, 88, 23, 37, 7) +
       hill(192, 64, 24, 38, 10) +
-      hill(96, 143, 33, 21, 3.2);
-    let h = 3.1 + mountains + valley + folds + coastalRelief;
+      hill(128, 170, 34, 26, 3.2);
+    const gardenRoll =
+      0.7 *
+      Math.sin(x * 0.061 + z * 0.039) *
+      Math.cos(z * 0.073) *
+      Math.exp(-Math.pow((x - 78) / 90, 2) - Math.pow((z - 166) / 57, 2));
+    let h = 3.1 + mountains + valley + folds + coastalRelief + gardenRoll;
     // Low shoreline eases below sea level so beaches slope into the water;
     // tall sea cliffs keep their full drop.
     const rim = this.shoreRim(x, z);

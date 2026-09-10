@@ -715,7 +715,36 @@ class Game {
           " · " +
           (distance(car, unseen) / 1000).toFixed(1) +
           " km"
-        : "五处风景已收集。挑选一场比赛，留下你的最佳纪录。";
+        : "风景已收集。挑选一场比赛，留下你的最佳纪录。";
+      const trail = this.world.scenicRoute;
+      let nearest = 35,
+        index = -1;
+      trail.points.forEach((p, i) => {
+        const d = distance(car, p);
+        if (d < nearest) {
+          nearest = d;
+          index = i;
+        }
+      });
+      if (index >= 0) {
+        const at = trail.stations[index];
+        const section =
+          at < 175
+            ? "林荫住宅"
+            : at < 380
+              ? "社区花园"
+              : at < 590
+                ? "海湾展开"
+                : at < trail.length - 80
+                  ? "沿海弯道"
+                  : "观景停靠点";
+        $("region-label").textContent = section;
+        $("map-location").textContent = "晴湾花园路";
+        $("objective").textContent =
+          at > trail.length - 80
+            ? "沿支路停靠，回望晴湾海岸。"
+            : "跟随金线 · 距观景点约 " + Math.round(trail.length - at) + " 米";
+      }
     }
     $("surface-label").textContent = car.offroad
       ? car.sand
@@ -726,7 +755,7 @@ class Game {
     $("distance-travelled").textContent =
       (car.distance / 1000).toFixed(1) + " km";
     $("quality-label").textContent =
-      this.settings.quality === "low" ? "低画质 · 30 FPS" : "标准画质";
+      this.settings.quality === "low" ? "低画质 · 限帧 30" : "标准画质";
     document.body.classList.toggle(
       "boosting",
       car.boost && this.mode === "play",

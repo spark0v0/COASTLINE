@@ -31,4 +31,7 @@ Three.js — MIT; license: THREE-LICENSE.txt.
 Vite build tooling — MIT; notices: VITE-LICENSE.md.
 
 住宅、树木、景观、地图、界面与合成音效由 COASTLINE 项目代码制作。
+2026-09-10：新增树冠枝叶遮罩由 Canvas 代码绘制；墙面砌石纹理、
+分层树冠几何、草坪分区与种植床渐变边缘亦由项目代码生成。
+本轮未新增下载素材，Car Concept 与 HDR 的原署名继续适用。
 第三方资源的许可不替代项目其余代码的许可。无需运行时连接素材网站。

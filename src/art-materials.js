@@ -68,6 +68,17 @@ export class ArtMaterials {
           n = 227 + (r() - 0.5) * 7 + 2 * Math.sin(y * 0.21);
           if (y % 128 === 0) n -= 13;
         }
+        if (kind === "ashlar") {
+          // Dressed blocks, about 83 x 42 cm at the material's world scale.
+          const row = Math.floor(y / 64),
+            xx = (x + (row % 2) * 64) % 128;
+          n =
+            228 +
+            Math.sin(row * 17 + Math.floor((x + (row % 2) * 64) / 128) * 7) *
+              5 +
+            (r() - 0.5) * 5;
+          if (xx < 1 || y % 64 < 1) n = 205;
+        }
         if (kind === "wood")
           n += 13 * Math.sin(x * 0.6 + Math.sin(y * 0.08) * 0.6);
         if (kind === "paving") {
@@ -115,6 +126,7 @@ export class ArtMaterials {
       {
         stone: 0.22,
         limestone: 0.4,
+        ashlar: 0.6,
         roof: 0.45,
         wood: 0.32,
         grass: 0.08,
@@ -126,7 +138,7 @@ export class ArtMaterials {
     // How strongly the photo texture modulates the base colour. Dark source
     // textures (plaster, dry grass) only add grain, they must not repaint.
     const strength =
-      { stucco: 0.5, grass: 0.5, sand: 0.75, stone: 0.85, asphalt: 0.9 }[
+      { stucco: 0.16, grass: 0.5, sand: 0.75, stone: 0.85, asphalt: 0.9 }[
         kind
       ] ?? 1;
     material.onBeforeCompile = (shader) => {
@@ -188,6 +200,7 @@ export class ArtMaterials {
         {
           stone: 0.016,
           limestone: 0.003,
+          ashlar: 0.003,
           stucco: 0.004,
           wood: 0.004,
           paving: 0.006,
